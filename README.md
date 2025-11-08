@@ -1,6 +1,6 @@
 # Toy B-Tree
 
-on-disk data structure, aimed at minimizing i/o reads and writes.
+on-disk data structure, aimed at performing create, read, update and delete operations while minimizing i/o reads and writes.
 
 ## eurekas
 
