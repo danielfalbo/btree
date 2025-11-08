@@ -1,6 +1,8 @@
 # Toy B-Tree
 
-## my eurekas
+## eurekas
+
+> my stupid questions
 
 - in reimplementing a b tree as a toy educational project, should we assume we have access to the filesystem abstraction and can create multiple directories and files, or should we just use 1 big binary file and seek through it? in practice, do b-tree implementations use the filesystem I/O primitives from the OS or do they operate on the disk at a lower "raw" level, kinda like ignoring the disk's filesystem? can a btree-based database be considere another format to initialize a disk with, as an alternative to APFS/HFS/exFAT, or is it an abstraction above the filesystem? why do we need btrees when OS do a lot of OS filesystem caching within the disk already? do databases like postgresql and mysqlite just create "a large file"/partition within a filesystem/disk and seek-n-go within that file or do they create "directories" and use multiple files?
 
