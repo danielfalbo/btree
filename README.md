@@ -1,5 +1,7 @@
 # Toy B-Tree
 
+on-disk data structure, aimed at minimizing i/o reads and writes.
+
 ## eurekas
 
 > my stupid questions
