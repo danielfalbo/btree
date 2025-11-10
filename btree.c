@@ -4,11 +4,8 @@
 #define DB_FILENAME "database.db"
 #define PAGE_SIZE_BYTES 4096
 
-typedef struct {
-    // 1 bit
+typedef struct Node {
     unsigned a:1;
-
-    // 8 bit
     unsigned char c;
 } Node;
 
