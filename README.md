@@ -11,3 +11,11 @@ on-disk data structure, aimed at performing create, read, update and delete oper
 - b-trees are obviously great for HDDs. are they also the best data structure to perform similar operations on SSDs? or do we have something better for SSDs?
 
 - what should we assume seek-and-go's complexity to be? should we assume every seek-and-go has the same complexity no matter the location or is the complexity proportional to the distance between the target location and the current seek position? with b-trees are we trying to minimize the seek DISTANCE between reads/writes or are we just trying to minimize the COUNT of reads/writes? is there a difference between multiple sequential reads and writes and multiple random reads and writes? both on SSD and HDD?
+
+## resources
+
+- [antirez/otree](https://github.com/antirez/otree)
+- [cstack/db_tutorial](https://cstack.github.io/db_tutorial/)
+- [antoniosarosi/mkdb](https://youtube.com/playlist?list=PLdYoxziVZt9DWfdxTnXDYdc3F2TFT9jzV)
+- ["(a,b)-trees" by Tom S](https://youtu.be/lifFgyB77zc)
+- [Redis diskstore google group post](https://groups.google.com/g/redis-db/c/1ES8eGaJvek/m/B2BOh_khrRcJ)
