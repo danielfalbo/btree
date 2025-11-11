@@ -9,10 +9,11 @@
 
 /* ======================== Data structures ======================= */
 
+#define STR_LEN 64
 typedef struct entry {
     unsigned int id;
-    char name[64];
-    char email[64];
+    char name[STR_LEN];
+    char email[STR_LEN];
 } entry;
 
 #define ROWS_PER_PAGE (PAGE_SIZE_BYTES / sizeof(entry))
@@ -36,7 +37,7 @@ void *xmalloc(size_t size) {
  * The following functions allocate objects of different types. */
 
 /* Allocate and initialize a new database entry object. */
-entry *createEntry(unsigned int id, char name[255], char email[255]) {
+entry *createEntry(unsigned int id, char *name, char *email) {
     entry *o = xmalloc(sizeof(entry));
     o->id = id;
     snprintf(o->name, sizeof(o->name), "%s", name);
@@ -69,12 +70,12 @@ void printEntry(entry *o) {
 }
 
 void printPage(page *p) {
-    fprintf(stdout, "=== table ===\n");
+    fprintf(stdout, "=== page ===\n");
     for (size_t j = 0; j < p->len; j++) {
         entry e = p->rows[j];
         printEntry(&e);
     }
-    fprintf(stdout, "=============\n");
+    fprintf(stdout, "============\n");
 }
 
 // read_node(block_id):
@@ -98,10 +99,11 @@ void printPage(page *p) {
 void printConfiguration(void) {
     fprintf(stdout, "=============\n");
     fprintf(stdout, "DB_FILENAME: %s\n", DB_FILENAME);
-    fprintf(stdout, "PAGE_SIZE_BYTES: %d\n", PAGE_SIZE_BYTES);
-    fprintf(stdout, "ROWS_PER_PAGE: %lu\n", ROWS_PER_PAGE);
+    fprintf(stdout, "STR_LEN: %d\n", STR_LEN);
     fprintf(stdout, "sizeof(entry): %lu\n", sizeof(entry));
+    fprintf(stdout, "PAGE_SIZE_BYTES: %d\n", PAGE_SIZE_BYTES);
     fprintf(stdout, "sizeof(page): %lu\n", sizeof(page));
+    fprintf(stdout, "ROWS_PER_PAGE: %lu\n", ROWS_PER_PAGE);
     fprintf(stdout, "=============\n\n");
 }
 
@@ -111,13 +113,16 @@ int main(void) {
     int fd = open(DB_FILENAME, O_CREAT | O_RDWR);
 
     entry *ciccio = createEntry(43, "ciccio", "ciccio@danielfalbo.com");
-    entry *daniel = createEntry(11, "daniel", "hello@danielfalbo.com");
     printEntry(ciccio);
     page *mypage = createPage();
     pagePush(mypage, ciccio);
+    free(ciccio);
     printPage(mypage);
+    entry *daniel = createEntry(11, "daniel", "hello@danielfalbo.com");
     pagePush(mypage, daniel);
+    free(daniel);
     printPage(mypage);
+    free(mypage);
 
     close(fd);
     return 0;
