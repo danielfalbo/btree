@@ -77,10 +77,14 @@ void pagePush(page *p, entry *e) {
 
 /* ======================= Disk operations ======================== */
 
-/* Assumes "offset" is the absolute starting from the file start */
 void dumpPage(int fd, page *p, off_t offset) {
     lseek(fd, offset, SEEK_SET);
     write(fd, p, sizeof(page));
+}
+
+void loadPage(int fd, page *p, off_t offset) {
+    lseek(fd, offset, SEEK_SET);
+    read(fd, p, sizeof(page));
 }
 
 // read_node(block_id):
@@ -118,25 +122,26 @@ void printPage(page *p) {
 int main(void) {
     printConfiguration();
 
-    entry *ciccio = createEntry(43, "ciccio", "ciccio@danielfalbo.com");
-    printEntry(ciccio);
-
-    page *mypage = createPage();
-    pagePush(mypage, ciccio);
-    free(ciccio);
-
-    printPage(mypage);
-
-    entry *daniel = createEntry(11, "daniel", "hello@danielfalbo.com");
-    pagePush(mypage, daniel);
-    free(daniel);
-
-    printPage(mypage);
-
     int fd = open(DB_FILENAME, O_CREAT | O_RDWR, 0644);
-    dumpPage(fd, mypage, 0);
-    free(mypage);
+    page *p = createPage();
+    loadPage(fd, p, 0);
+    printPage(p);
+    free(p);
     close(fd);
+
+    // entry *ciccio = createEntry(43, "ciccio", "ciccio@danielfalbo.com");
+    // pagePush(mypage, ciccio);
+    // free(ciccio);
+
+
+    // entry *daniel = createEntry(11, "daniel", "hello@danielfalbo.com");
+    // pagePush(mypage, daniel);
+    // free(daniel);
+
+
+    // dumpPage(fd, mypage, 0);
+    // free(mypage);
+
 
     return 0;
 }
