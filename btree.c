@@ -93,13 +93,15 @@ void pageSearchById(page *p, unsigned int id) {
 
 /* ======================= Disk operations ======================== */
 
-void dumpPage(int fd, page *p, off_t offset) {
-    lseek(fd, offset, SEEK_SET);
+/* Dumps page 'p' as the 'n'th page of the 'fd' file. */
+void dumpPage(int fd, page *p, int n) {
+    lseek(fd, n * PAGE_SIZE_BYTES, SEEK_SET);
     write(fd, p, sizeof(page));
 }
 
-void loadPage(int fd, page *p, off_t offset) {
-    lseek(fd, offset, SEEK_SET);
+/* Loads the 'n'th page from the 'fd' file to 'p'. */
+void loadPage(int fd, page *p, int n) {
+    lseek(fd, n * PAGE_SIZE_BYTES, SEEK_SET);
     read(fd, p, sizeof(page));
 }
 
