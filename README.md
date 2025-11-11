@@ -22,3 +22,4 @@ on-disk data structure, aimed at performing create, read, update and delete oper
 - ["(a,b)-trees" by Tom S](https://youtu.be/lifFgyB77zc)
 - [Redis diskstore google group post](https://groups.google.com/g/redis-db/c/1ES8eGaJvek/m/B2BOh_khrRcJ)
 - [Carnegie Mellon University Database Group](https://www.youtube.com/@CMUDatabaseGroup)
+- ["Databases on SSDs" by Josiah Carlson](https://www.dr-josiah.com/2010/08/databases-on-ssds-initial-ideas-on.html)
