@@ -47,17 +47,7 @@ void *xmalloc(size_t size) {
 /* =================== Object related functions ===================
  * The following functions allocate objects of different types. */
 
-/* Allocate and initialize a new database entry object. */
-entry *createEntry(unsigned int id, char *name, char *email) {
-    entry *o = xmalloc(sizeof(entry));
-    o->id = id;
-    snprintf(o->name, sizeof(o->name), "%s", name);
-    snprintf(o->email, sizeof(o->email), "%s", email);
-    return o;
-}
-
-/* ===================== Page object ============================== */
-
+/* Allocate and initialize a new page object. */
 page *createPage(void) {
     page *o = xmalloc(sizeof(page));
     o->len = 0;
@@ -65,13 +55,14 @@ page *createPage(void) {
 }
 
 /* Add the new element at the end of the table 't'. */
-void pagePush(page *p, entry *e) {
+void pagePush(page *p, unsigned int id, char *name, char *email) {
     if (p->len == ROWS_PER_PAGE) {
         fprintf(stderr, "Out of space pushing entry to page\n");
         exit(1);
     }
-    void * page_end_ptr = &(p->rows[p->len]);
-    memcpy(page_end_ptr, e, sizeof(entry));
+    p->rows[p->len].id = id;
+    snprintf(p->rows[p->len].name, STR_LEN, "%s", name);
+    snprintf(p->rows[p->len].email, STR_LEN, "%s", email);
     p->len++;
 }
 
@@ -107,7 +98,7 @@ void loadPage(int fd, page *p, off_t offset) {
 
 /* ======================= Use the database ======================= */
 void printEntry(entry *o) {
-    fprintf(stdout, "entry(%d, %s, %s)\n", o->id, o->name, o->email);
+    fprintf(stdout, "entry(%u, %s, %s)\n", o->id, o->name, o->email);
 }
 
 void printPage(page *p) {
@@ -126,22 +117,13 @@ int main(void) {
     page *p = createPage();
     loadPage(fd, p, 0);
     printPage(p);
+
+    // pagePush(p, -1, "name", "neg@danielfalbo.com");
+    // printPage(p);
+
+    dumpPage(fd, p, 0);
     free(p);
     close(fd);
-
-    // entry *ciccio = createEntry(43, "ciccio", "ciccio@danielfalbo.com");
-    // pagePush(mypage, ciccio);
-    // free(ciccio);
-
-
-    // entry *daniel = createEntry(11, "daniel", "hello@danielfalbo.com");
-    // pagePush(mypage, daniel);
-    // free(daniel);
-
-
-    // dumpPage(fd, mypage, 0);
-    // free(mypage);
-
 
     return 0;
 }
