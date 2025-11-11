@@ -2,6 +2,8 @@
 
 on-disk data structure, aimed at performing create, read, update and delete operations while minimizing i/o reads and writes.
 
+<img src="pic.jpeg" width="200px" />
+
 ## eurekas
 
 > my stupid questions
