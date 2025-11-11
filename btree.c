@@ -53,6 +53,8 @@ page *createPage(void) {
     return o;
 }
 
+/* ======================= Page operations ======================== */
+
 /* Add the new element at the end of the table 't'. */
 void pagePush(page *p, unsigned int id, char *name, char *email) {
     if (p->len == ROWS_PER_PAGE) {
@@ -64,8 +66,6 @@ void pagePush(page *p, unsigned int id, char *name, char *email) {
     snprintf(p->rows[p->len].email, STR_LEN, "%s", email);
     p->len++;
 }
-
-/* ======================= Page operations ======================== */
 
 void printEntry(entry *o) {
     fprintf(stdout, "entry(%u, %s, %s)\n", o->id, o->name, o->email);
@@ -91,6 +91,8 @@ void pageSearchById(page *p, unsigned int id) {
     fprintf(stdout, "Entry %u not found in page\n", id);
 }
 
+// TODO: pageDeleteById
+
 /* ======================= Disk operations ======================== */
 
 /* Dumps page 'p' as the 'n'th page of the 'fd' file. */
@@ -104,6 +106,12 @@ void loadPage(int fd, page *p, int n) {
     lseek(fd, n * PAGE_SIZE_BYTES, SEEK_SET);
     read(fd, p, sizeof(page));
 }
+
+// TODO: file INSERT
+
+// TODO: file SELECT
+
+// TODO: file DELETE
 
 int main(void) {
     printConfiguration();
