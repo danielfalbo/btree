@@ -22,6 +22,17 @@ typedef struct page {
     entry rows[ROWS_PER_PAGE];
 } page;
 
+void printConfiguration(void) {
+    fprintf(stdout, "=============\n");
+    fprintf(stdout, "DB_FILENAME: %s\n", DB_FILENAME);
+    fprintf(stdout, "STR_LEN: %d\n", STR_LEN);
+    fprintf(stdout, "sizeof(entry): %lu\n", sizeof(entry));
+    fprintf(stdout, "PAGE_SIZE_BYTES: %d\n", PAGE_SIZE_BYTES);
+    fprintf(stdout, "sizeof(page): %lu\n", sizeof(page));
+    fprintf(stdout, "ROWS_PER_PAGE: %lu\n", ROWS_PER_PAGE);
+    fprintf(stdout, "=============\n\n");
+}
+
 /* =================== Allocation wrappers ======================== */
 
 void *xmalloc(size_t size) {
@@ -64,18 +75,12 @@ void pagePush(page *p, entry *e) {
     p->len++;
 }
 
-/* ======================= Use the database ======================= */
-void printEntry(entry *o) {
-    fprintf(stdout, "entry(%d, %s, %s)\n", o->id, o->name, o->email);
-}
+/* ======================= Disk operations ======================== */
 
-void printPage(page *p) {
-    fprintf(stdout, "=== page ===\n");
-    for (size_t j = 0; j < p->len; j++) {
-        entry e = p->rows[j];
-        printEntry(&e);
-    }
-    fprintf(stdout, "============\n");
+/* Assumes "offset" is the absolute starting from the file start */
+void dumpPage(int fd, page *p, off_t offset) {
+    lseek(fd, offset, SEEK_SET);
+    write(fd, p, sizeof(page));
 }
 
 // read_node(block_id):
@@ -96,34 +101,42 @@ void printPage(page *p) {
 // void search_by_id(unsigned int id) {
 // }
 
-void printConfiguration(void) {
-    fprintf(stdout, "=============\n");
-    fprintf(stdout, "DB_FILENAME: %s\n", DB_FILENAME);
-    fprintf(stdout, "STR_LEN: %d\n", STR_LEN);
-    fprintf(stdout, "sizeof(entry): %lu\n", sizeof(entry));
-    fprintf(stdout, "PAGE_SIZE_BYTES: %d\n", PAGE_SIZE_BYTES);
-    fprintf(stdout, "sizeof(page): %lu\n", sizeof(page));
-    fprintf(stdout, "ROWS_PER_PAGE: %lu\n", ROWS_PER_PAGE);
-    fprintf(stdout, "=============\n\n");
+/* ======================= Use the database ======================= */
+void printEntry(entry *o) {
+    fprintf(stdout, "entry(%d, %s, %s)\n", o->id, o->name, o->email);
+}
+
+void printPage(page *p) {
+    fprintf(stdout, "=== page ===\n");
+    for (size_t j = 0; j < p->len; j++) {
+        entry e = p->rows[j];
+        printEntry(&e);
+    }
+    fprintf(stdout, "============\n");
 }
 
 int main(void) {
     printConfiguration();
 
-    int fd = open(DB_FILENAME, O_CREAT | O_RDWR);
-
     entry *ciccio = createEntry(43, "ciccio", "ciccio@danielfalbo.com");
     printEntry(ciccio);
+
     page *mypage = createPage();
     pagePush(mypage, ciccio);
     free(ciccio);
+
     printPage(mypage);
+
     entry *daniel = createEntry(11, "daniel", "hello@danielfalbo.com");
     pagePush(mypage, daniel);
     free(daniel);
-    printPage(mypage);
-    free(mypage);
 
+    printPage(mypage);
+
+    int fd = open(DB_FILENAME, O_CREAT | O_RDWR, 0644);
+    dumpPage(fd, mypage, 0);
+    free(mypage);
     close(fd);
+
     return 0;
 }
