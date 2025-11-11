@@ -105,7 +105,6 @@ void loadPage(int fd, page *p, int n) {
     read(fd, p, sizeof(page));
 }
 
-
 int main(void) {
     printConfiguration();
 
