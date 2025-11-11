@@ -23,7 +23,6 @@ typedef struct page {
 } page;
 
 void printConfiguration(void) {
-    fprintf(stdout, "=============\n");
     fprintf(stdout, "DB_FILENAME: %s\n", DB_FILENAME);
     fprintf(stdout, "STR_LEN: %d\n", STR_LEN);
     fprintf(stdout, "sizeof(entry): %lu\n", sizeof(entry));
@@ -66,37 +65,8 @@ void pagePush(page *p, unsigned int id, char *name, char *email) {
     p->len++;
 }
 
-/* ======================= Disk operations ======================== */
+/* ======================= Page operations ======================== */
 
-void dumpPage(int fd, page *p, off_t offset) {
-    lseek(fd, offset, SEEK_SET);
-    write(fd, p, sizeof(page));
-}
-
-void loadPage(int fd, page *p, off_t offset) {
-    lseek(fd, offset, SEEK_SET);
-    read(fd, p, sizeof(page));
-}
-
-// read_node(block_id):
-//      offset = block_id * PAGE_SIZE_BYTES
-//      f.seek(offset)
-//      data_bytes = f.read(PAGE_SIZE_BYTES)
-//
-//      node: Node = deserialize(data_bytes)
-//      return node
-
-// write_node(block_id, node: Node):
-//      offset = block_id * PAGE_SIZE_BYTES
-//      f.seek(offset)
-//
-//      data_bytes = serialize(node)
-//      f.write(data_bytes)
-
-// void search_by_id(unsigned int id) {
-// }
-
-/* ======================= Use the database ======================= */
 void printEntry(entry *o) {
     fprintf(stdout, "entry(%u, %s, %s)\n", o->id, o->name, o->email);
 }
@@ -110,6 +80,30 @@ void printPage(page *p) {
     fprintf(stdout, "============\n");
 }
 
+void pageSearchById(page *p, unsigned int id) {
+    for (size_t j = 0; j < p->len; j++) {
+        entry e = p->rows[j];
+        if (e.id == id) {
+            printEntry(&e);
+            return;
+        }
+    }
+    fprintf(stdout, "Entry %u not found in page\n", id);
+}
+
+/* ======================= Disk operations ======================== */
+
+void dumpPage(int fd, page *p, off_t offset) {
+    lseek(fd, offset, SEEK_SET);
+    write(fd, p, sizeof(page));
+}
+
+void loadPage(int fd, page *p, off_t offset) {
+    lseek(fd, offset, SEEK_SET);
+    read(fd, p, sizeof(page));
+}
+
+
 int main(void) {
     printConfiguration();
 
@@ -120,6 +114,8 @@ int main(void) {
 
     // pagePush(p, -1, "name", "neg@danielfalbo.com");
     // printPage(p);
+    pageSearchById(p, 100);
+    pageSearchById(p, 43);
 
     dumpPage(fd, p, 0);
     free(p);
