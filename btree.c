@@ -174,7 +174,7 @@ int main(void) {
     // dbSearchById(fd, 0);
     // dbPush(fd, 101, "101", "101@danielfalbo.com");
     // dbPrintPage(fd, 0);
-    dbDeleteById(fd, 101);
+    // dbDeleteById(fd, 101);
     dbPrintPage(fd, 0);
 
     close(fd);
