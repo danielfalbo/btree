@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/errno.h>
 
 #define DB_FILENAME "database.db"
 #define PAGE_SIZE_BYTES 4096
@@ -155,18 +156,37 @@ void dumpPage(int fd, page *p, unsigned int n) {
     write(fd, p, sizeof(page));
 }
 
-/* Loads the 'n'th page from the 'fd' file to 'p'. */
-void loadPage(int fd, page *p, unsigned int n) {
+/* Fetches the 'n'th page from the 'fd' file to 'p'. */
+void fetchPage(int fd, page *p, unsigned int n) {
     lseek(fd, n * PAGE_SIZE_BYTES, SEEK_SET);
     read(fd, p, sizeof(page));
 }
 
 /* ======================= Disk database logic ==================== */
 
+/* Opens the database file, returns the file descriptor, and
+ * loads the root in memory. If the file does not exist, it creates it
+ * and dumps an empty root node at offset 0. */
+int dbOpenOrCreate(page *root) {
+    int fd;
+    fd = open(DB_FILENAME, O_RDWR, 0644);
+    if (fd == -1) {
+        if (errno == ENOENT) {
+            fd = open(DB_FILENAME, O_RDWR | O_CREAT, 0644);
+            root = createPage();
+            dumpPage(fd, root, 0);
+        } else {
+            perror("Opening database file");
+            exit(1);
+        }
+    }
+    return fd;
+}
+
 /* Print the 'n'th page of database at 'fd'. */
 void dbPrintPage(int fd, int n) {
     page *p = createPage();
-    loadPage(fd, p, n);
+    fetchPage(fd, p, n);
 
     printPage(p);
 
@@ -176,7 +196,7 @@ void dbPrintPage(int fd, int n) {
 /* Insert new element onto database at 'fd'. */
 void dbPush(int fd, unsigned int id, char *name, char *email) {
     page *p = createPage();
-    loadPage(fd, p, 0);
+    fetchPage(fd, p, 0);
 
     pagePush(p, id, name, email);
     dumpPage(fd, p, 0);
@@ -187,7 +207,7 @@ void dbPush(int fd, unsigned int id, char *name, char *email) {
 /* Search element with given 'id' within database at 'fd'. */
 void dbSearchById(int fd, unsigned int id) {
     page *p = createPage();
-    loadPage(fd, p, 0);
+    fetchPage(fd, p, 0);
 
     pageSearchById(p, id);
 
@@ -197,7 +217,7 @@ void dbSearchById(int fd, unsigned int id) {
 /* Remove element with given "id" from database at "fd". */
 void dbDeleteById(int fd, unsigned int id) {
     page *p = createPage();
-    loadPage(fd, p, 0);
+    fetchPage(fd, p, 0);
 
     pageDeleteById(p, id);
     dumpPage(fd, p, 0);
@@ -209,21 +229,20 @@ void dbDeleteById(int fd, unsigned int id) {
 
 int main(void) {
     printConfiguration();
-    int fd = open(DB_FILENAME, O_CREAT | O_RDWR, 0644);
+
+    page *root = NULL;
+    int fd = dbOpenOrCreate(root);
 
     // dbSearchById(fd, 0);
 
     // dbPush(fd, 103, "103", "103@danielfalbo.com");
     // dbPush(fd, 101, "101", "101@danielfalbo.com");
-    // dbPush(fd, 106, "106", "106@danielfalbo.com");
-    // dbPush(fd, 102, "102", "102@danielfalbo.com");
 
-    // dbDeleteById(fd, 102);
     // dbDeleteById(fd, 103);
-    // dbDeleteById(fd, 106);
 
-    dbPrintPage(fd, 0);
+    // dbPrintPage(fd, 0);
 
+    free(root);
     close(fd);
     return 0;
 }
