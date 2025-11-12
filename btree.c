@@ -27,7 +27,7 @@ typedef struct page {
 } page;
 
 #define BTREE_MIN_KEYS 4
-// #define BTREE_MAX_KEYS 255
+// #define BTREE_MAX_KEYS 340
 #define BTREE_MAX_KEYS 7
 typedef struct btree_node {
     /* Count of keys actually present in the node.
