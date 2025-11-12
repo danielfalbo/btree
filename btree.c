@@ -6,11 +6,9 @@
 #include <sys/errno.h>
 
 #define DB_FILENAME "database.db"
-#define PAGE_SIZE_BYTES 4096
+#define IDEAL_PAGE_SIZE_BYTES 4096
 
-/* ======================== Data structures =======================
- * We use the same 'page' struct for both btree nodes and data blocks.
- * Both types will occupy the same space on disk, PAGE_SIZE_BYTES. */
+/* ======================== Data structures ======================= */
 
 #define PAGE_TYPE_DATA    0
 #define PAGE_TYPE_BTREE   1
@@ -22,7 +20,7 @@ typedef struct entry {
     char email[STR_LEN];
 } entry;
 
-#define ROWS_PER_PAGE (PAGE_SIZE_BYTES / sizeof(entry))
+#define ROWS_PER_PAGE (IDEAL_PAGE_SIZE_BYTES / sizeof(entry))
 #define BTREE_MIN_KEYS 4
 // #define BTREE_MAX_KEYS 340
 #define BTREE_MAX_KEYS 7
@@ -50,7 +48,7 @@ typedef struct page {
             *
             * Entry data for 'keys[i]' will be at 'values[i]'th page on disk.
             *
-            * It is up to the consumer to multiply this index by PAGE_SIZE_BYTES
+            * It is up to the user to multiply this index by sizeof(page)
             * when seeking to the disk location. */
             unsigned int values[BTREE_MAX_KEYS];
 
@@ -64,7 +62,7 @@ typedef struct page {
             *      /           /           /           /            \
             * children[0] children[1] children[2] children[3]  children[4]
             *
-            * It is up to the consumer to multiply this index by PAGE_SIZE_BYTES
+            * It is up to the user to multiply this index by sizeof(page)
             * when seeking to the disk location. */
             unsigned int children[BTREE_MAX_KEYS+1];
         } node;
@@ -75,7 +73,7 @@ void printConfiguration(void) {
     fprintf(stdout, "DB_FILENAME: %s\n", DB_FILENAME);
     fprintf(stdout, "STR_LEN: %d\n", STR_LEN);
     fprintf(stdout, "sizeof(entry): %lu\n", sizeof(entry));
-    fprintf(stdout, "PAGE_SIZE_BYTES: %d\n", PAGE_SIZE_BYTES);
+    fprintf(stdout, "IDEAL_PAGE_SIZE_BYTES: %d\n", IDEAL_PAGE_SIZE_BYTES);
     fprintf(stdout, "sizeof(page): %lu\n", sizeof(page));
     fprintf(stdout, "ROWS_PER_PAGE: %lu\n", ROWS_PER_PAGE);
     fprintf(stdout, "BTREE_MIN_KEYS: %d\n", BTREE_MIN_KEYS);
@@ -105,22 +103,23 @@ page *createPage(int type) {
     return o;
 }
 
-/* ======================= Page operations ======================== */
+/* ======================= Data pages operations ================== */
+
 void printEntry(entry *o) {
     fprintf(stdout, "entry(%u, %s, %s)\n", o->id, o->name, o->email);
 }
 
-void printPage(page *p) {
-    fprintf(stdout, "=== page ===\n");
+void printDataPage(page *p) {
+    fprintf(stdout, "=== data page ===\n");
     for (size_t j = 0; j < p->len; j++) {
         entry e = p->data.rows[j];
         printEntry(&e);
     }
-    fprintf(stdout, "============\n");
+    fprintf(stdout, "=================\n");
 }
 
 /* Add the new element at the end of the page 'p'. */
-void pagePush(page *p, unsigned int id, char *name, char *email) {
+void dataPagePush(page *p, unsigned int id, char *name, char *email) {
     if (p->len == ROWS_PER_PAGE) {
         fprintf(stderr, "Out of space pushing entry to page\n");
         exit(1);
@@ -132,7 +131,7 @@ void pagePush(page *p, unsigned int id, char *name, char *email) {
 }
 
 /* Search element with given 'id' within page 'p'. */
-void pageSearchById(page *p, unsigned int id) {
+void dataPageSearchById(page *p, unsigned int id) {
     for (size_t j = 0; j < p->len; j++) {
         entry e = p->data.rows[j];
         if (e.id == id) {
@@ -144,7 +143,7 @@ void pageSearchById(page *p, unsigned int id) {
 }
 
 /* Remove element with given "id" from page "p". */
-void pageDeleteById(page *p, unsigned int id) {
+void dataPageDeleteById(page *p, unsigned int id) {
     for (size_t j = 0; j < p->len; j++) {
         entry e = p->data.rows[j];
         if (e.id == id) {
@@ -158,17 +157,28 @@ void pageDeleteById(page *p, unsigned int id) {
     fprintf(stdout, "Entry %u not found in page when deleting\n", id);
 }
 
+/* ================== Btree pages operations ====================== */
+
+void printBtreePage(page *p) {
+    fprintf(stdout, "=== btree page ===\n");
+    for (size_t j = 0; j < p->len; j++) {
+        int key = p->node.keys[j];
+        fprintf(stdout, "%d", key);
+    }
+    fprintf(stdout, "==================\n");
+}
+
 /* ======================= Disk operations ======================== */
 
 /* Dumps page 'p' as the 'n'th page of the 'fd' file. */
 void dumpPage(int fd, page *p, unsigned int n) {
-    lseek(fd, n * PAGE_SIZE_BYTES, SEEK_SET);
+    lseek(fd, n * sizeof(page), SEEK_SET);
     write(fd, p, sizeof(page));
 }
 
 /* Fetches the 'n'th page from the 'fd' file to 'p'. */
 void fetchPage(int fd, page *p, unsigned int n) {
-    lseek(fd, n * PAGE_SIZE_BYTES, SEEK_SET);
+    lseek(fd, n * sizeof(page), SEEK_SET);
     read(fd, p, sizeof(page));
 }
 
@@ -195,11 +205,19 @@ int dbOpenOrCreate(page *root) {
 
 /* Print the 'n'th page of database at 'fd'. */
 void dbPrintPage(int fd, int n) {
-    page *p = createPage(PAGE_TYPE_DATA);
+    page *p = createPage(-1);
     fetchPage(fd, p, n);
-
-    printPage(p);
-
+    switch (p->type) {
+    case PAGE_TYPE_DATA:
+        printDataPage(p);
+        break;
+    case PAGE_TYPE_BTREE:
+        printBtreePage(p);
+        break;
+    default:
+        fprintf(stdout, "?");
+        break;
+    }
     free(p);
 }
 
@@ -208,7 +226,7 @@ void dbPush(int fd, unsigned int id, char *name, char *email) {
     page *p = createPage(PAGE_TYPE_DATA);
     fetchPage(fd, p, 0);
 
-    pagePush(p, id, name, email);
+    dataPagePush(p, id, name, email);
     dumpPage(fd, p, 0);
 
     free(p);
@@ -219,7 +237,7 @@ void dbSearchById(int fd, unsigned int id) {
     page *p = createPage(PAGE_TYPE_DATA);
     fetchPage(fd, p, 0);
 
-    pageSearchById(p, id);
+    dataPageSearchById(p, id);
 
     free(p);
 }
@@ -229,7 +247,7 @@ void dbDeleteById(int fd, unsigned int id) {
     page *p = createPage(PAGE_TYPE_DATA);
     fetchPage(fd, p, 0);
 
-    pageDeleteById(p, id);
+    dataPageDeleteById(p, id);
     dumpPage(fd, p, 0);
 
     free(p);
@@ -242,6 +260,7 @@ int main(void) {
 
     page *root = NULL;
     int fd = dbOpenOrCreate(root);
+    dbPrintPage(fd, 0);
 
     // dbSearchById(fd, 0);
 
@@ -250,7 +269,6 @@ int main(void) {
 
     // dbDeleteById(fd, 103);
 
-    // dbPrintPage(fd, 0);
 
     free(root);
     close(fd);
