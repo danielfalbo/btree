@@ -1,8 +1,22 @@
 # Toy B-Tree
 
-on-disk data structure, aimed at performing create, read, update and delete operations while minimizing i/o reads and writes.
+on-disk data structure, aimed at performing create, read and delete operations while minimizing i/o reads and writes.
 
 <img src="pic.jpeg" width="200px" />
+
+## skeptical AI prompt for learning
+
+```
+<btree.c>
+
+I'm the godfather of b-trees.
+One of my students is implementing a toy b-tree.
+This is their progress so far.
+What do you see from their current implementation?
+What are they doing wrong?
+Do you see red flags?
+Do you think they understand what they are doing?
+```
 
 ## eurekas
 
