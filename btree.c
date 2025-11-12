@@ -97,8 +97,8 @@ void pageDeleteById(page *p, unsigned int id) {
         entry e = p->rows[j];
         if (e.id == id) {
             p->len--;
-            for (size_t i = j+1; i < p->len; i++) {
-                p->rows[i] = p->rows[i+1];
+            for (; j < p->len; j++) {
+                p->rows[j] = p->rows[j+1];
             }
             return;
         }
@@ -170,11 +170,20 @@ int main(void) {
     printConfiguration();
     int fd = open(DB_FILENAME, O_CREAT | O_RDWR, 0644);
 
-    // dbPrintPage(fd, 0);
     // dbSearchById(fd, 0);
+
     // dbPush(fd, 101, "101", "101@danielfalbo.com");
-    // dbPrintPage(fd, 0);
-    // dbDeleteById(fd, 101);
+    // dbPush(fd, 102, "102", "102@danielfalbo.com");
+    // dbPush(fd, 103, "103", "103@danielfalbo.com");
+    // dbPush(fd, 104, "104", "104@danielfalbo.com");
+    // dbPush(fd, 105, "105", "105@danielfalbo.com");
+    // dbPush(fd, 106, "106", "106@danielfalbo.com");
+    // dbPush(fd, 107, "107", "107@danielfalbo.com");
+
+    // dbDeleteById(fd, 102);
+    // dbDeleteById(fd, 103);
+    // dbDeleteById(fd, 106);
+
     dbPrintPage(fd, 0);
 
     close(fd);
