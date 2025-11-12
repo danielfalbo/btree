@@ -261,6 +261,10 @@ void dbSearchById(int fd, unsigned int id) {
     page *p = createPage(PAGE_TYPE_BTREE);
     fetchPage(fd, p, 0);
     int j = btreePageSearchById(p, id);
+    if (j == -1) {
+        fprintf(stdout, "Key %u not found in database.", id);
+        return;
+    }
     unsigned int valuePage = p->node.values[j];
     free(p);
 
@@ -297,7 +301,7 @@ int main(void) {
 
     // dbWalk(fd);
 
-    dbSearchById(fd, 0);
+    // dbSearchById(fd, 10);
 
     // dbDeleteById(fd, 103);
 
