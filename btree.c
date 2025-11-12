@@ -8,9 +8,14 @@
 #define DB_FILENAME "database.db"
 #define PAGE_SIZE_BYTES 4096
 
-/* ======================== Data structures ======================= */
+/* ======================== Data structures =======================
+ * We use the same 'page' struct for both btree nodes and data blocks.
+ * Both types will occupy the same space on disk, PAGE_SIZE_BYTES. */
 
-#define STR_LEN 64
+#define PAGE_TYPE_DATA    0
+#define PAGE_TYPE_BTREE   1
+
+#define STR_LEN 58
 typedef struct entry {
     unsigned int id;
     char name[STR_LEN];
@@ -18,48 +23,53 @@ typedef struct entry {
 } entry;
 
 #define ROWS_PER_PAGE (PAGE_SIZE_BYTES / sizeof(entry))
-typedef struct page {
-    /* Buffer of ROWS_PER_PAGE entries. */
-    entry rows[ROWS_PER_PAGE];
-
-    /* Count of rows actually present in the buffer. */
-    unsigned int len;
-
-} page;
-
 #define BTREE_MIN_KEYS 4
 // #define BTREE_MAX_KEYS 340
 #define BTREE_MAX_KEYS 7
-typedef struct btree_node {
-    /* Count of keys actually present in the node.
+typedef struct page {
+    int type; // PAGE_TYPE_*
+
+    /* For data nodes: count of rows actually present in the buffer,
+     * 0 <= len <= ROWS_PER_PAGE;
+     *
+     * For btree nodes: count of keys actually present in the node.
      * BTREE_MIN_KEYS <= len <= BTREE_MAX_KEYS for all nodes except root. */
     unsigned int len;
 
-    /* Ids of entries whose pointers are stored within this node. */
-    unsigned int keys[BTREE_MAX_KEYS];
+    union {
+        struct {
+            /* Buffer of ROWS_PER_PAGE entries. */
+            entry rows[ROWS_PER_PAGE];
+        } data;
 
-    /* Indices of disk pages containing entries data.
-     *
-     * Entry data for 'keys[i]' will be at 'values[i]'th page on disk.
-     *
-     * It is up to the consumer to multiply this index by PAGE_SIZE_BYTES
-     * when seeking to the disk location. */
-    unsigned int values[BTREE_MAX_KEYS];
+        struct {
+            /* Ids of entries whose pointers are stored within this node. */
+            unsigned int keys[BTREE_MAX_KEYS];
 
-    /* Indices of disk pages containing this node's children.
-     *
-     * 'children[i]' will be the b-subtree of keys larger than
-     * 'keys[i-1]' and smaller than 'keys[i]'
-     *
-     *          keys[0]     keys[i]     keys[2]    keys[3]
-     *       /           /           /           /          \
-     *      /           /           /           /            \
-     * children[0] children[1] children[2] children[3]  children[4]
-     *
-     * It is up to the consumer to multiply this index by PAGE_SIZE_BYTES
-     * when seeking to the disk location. */
-    unsigned int children[BTREE_MAX_KEYS+1];
-} btree_node;
+            /* Indices of disk pages containing entries data.
+            *
+            * Entry data for 'keys[i]' will be at 'values[i]'th page on disk.
+            *
+            * It is up to the consumer to multiply this index by PAGE_SIZE_BYTES
+            * when seeking to the disk location. */
+            unsigned int values[BTREE_MAX_KEYS];
+
+            /* Indices of disk pages containing this node's children.
+            *
+            * 'children[i]' will be the b-subtree of keys larger than
+            * 'keys[i-1]' and smaller than 'keys[i]'
+            *
+            *          keys[0]     keys[i]     keys[2]    keys[3]
+            *       /           /           /           /          \
+            *      /           /           /           /            \
+            * children[0] children[1] children[2] children[3]  children[4]
+            *
+            * It is up to the consumer to multiply this index by PAGE_SIZE_BYTES
+            * when seeking to the disk location. */
+            unsigned int children[BTREE_MAX_KEYS+1];
+        } node;
+    };
+} page;
 
 void printConfiguration(void) {
     fprintf(stdout, "DB_FILENAME: %s\n", DB_FILENAME);
@@ -67,7 +77,6 @@ void printConfiguration(void) {
     fprintf(stdout, "sizeof(entry): %lu\n", sizeof(entry));
     fprintf(stdout, "PAGE_SIZE_BYTES: %d\n", PAGE_SIZE_BYTES);
     fprintf(stdout, "sizeof(page): %lu\n", sizeof(page));
-    fprintf(stdout, "sizeof(btree_node): %lu\n", sizeof(btree_node));
     fprintf(stdout, "ROWS_PER_PAGE: %lu\n", ROWS_PER_PAGE);
     fprintf(stdout, "BTREE_MIN_KEYS: %d\n", BTREE_MIN_KEYS);
     fprintf(stdout, "BTREE_MAX_KEYS: %d\n", BTREE_MAX_KEYS);
@@ -89,9 +98,10 @@ void *xmalloc(size_t size) {
  * The following functions allocate objects of different types. */
 
 /* Allocate and initialize a new page object. */
-page *createPage(void) {
+page *createPage(int type) {
     page *o = xmalloc(sizeof(page));
     o->len = 0;
+    o->type = type;
     return o;
 }
 
@@ -103,7 +113,7 @@ void printEntry(entry *o) {
 void printPage(page *p) {
     fprintf(stdout, "=== page ===\n");
     for (size_t j = 0; j < p->len; j++) {
-        entry e = p->rows[j];
+        entry e = p->data.rows[j];
         printEntry(&e);
     }
     fprintf(stdout, "============\n");
@@ -115,16 +125,16 @@ void pagePush(page *p, unsigned int id, char *name, char *email) {
         fprintf(stderr, "Out of space pushing entry to page\n");
         exit(1);
     }
-    p->rows[p->len].id = id;
-    snprintf(p->rows[p->len].name, STR_LEN, "%s", name);
-    snprintf(p->rows[p->len].email, STR_LEN, "%s", email);
+    p->data.rows[p->len].id = id;
+    snprintf(p->data.rows[p->len].name, STR_LEN, "%s", name);
+    snprintf(p->data.rows[p->len].email, STR_LEN, "%s", email);
     p->len++;
 }
 
 /* Search element with given 'id' within page 'p'. */
 void pageSearchById(page *p, unsigned int id) {
     for (size_t j = 0; j < p->len; j++) {
-        entry e = p->rows[j];
+        entry e = p->data.rows[j];
         if (e.id == id) {
             printEntry(&e);
             return;
@@ -136,11 +146,11 @@ void pageSearchById(page *p, unsigned int id) {
 /* Remove element with given "id" from page "p". */
 void pageDeleteById(page *p, unsigned int id) {
     for (size_t j = 0; j < p->len; j++) {
-        entry e = p->rows[j];
+        entry e = p->data.rows[j];
         if (e.id == id) {
             p->len--;
             for (; j < p->len; j++) {
-                p->rows[j] = p->rows[j+1];
+                p->data.rows[j] = p->data.rows[j+1];
             }
             return;
         }
@@ -173,7 +183,7 @@ int dbOpenOrCreate(page *root) {
     if (fd == -1) {
         if (errno == ENOENT) {
             fd = open(DB_FILENAME, O_RDWR | O_CREAT, 0644);
-            root = createPage();
+            root = createPage(PAGE_TYPE_BTREE);
             dumpPage(fd, root, 0);
         } else {
             perror("Opening database file");
@@ -185,7 +195,7 @@ int dbOpenOrCreate(page *root) {
 
 /* Print the 'n'th page of database at 'fd'. */
 void dbPrintPage(int fd, int n) {
-    page *p = createPage();
+    page *p = createPage(PAGE_TYPE_DATA);
     fetchPage(fd, p, n);
 
     printPage(p);
@@ -195,7 +205,7 @@ void dbPrintPage(int fd, int n) {
 
 /* Insert new element onto database at 'fd'. */
 void dbPush(int fd, unsigned int id, char *name, char *email) {
-    page *p = createPage();
+    page *p = createPage(PAGE_TYPE_DATA);
     fetchPage(fd, p, 0);
 
     pagePush(p, id, name, email);
@@ -206,7 +216,7 @@ void dbPush(int fd, unsigned int id, char *name, char *email) {
 
 /* Search element with given 'id' within database at 'fd'. */
 void dbSearchById(int fd, unsigned int id) {
-    page *p = createPage();
+    page *p = createPage(PAGE_TYPE_DATA);
     fetchPage(fd, p, 0);
 
     pageSearchById(p, id);
@@ -216,7 +226,7 @@ void dbSearchById(int fd, unsigned int id) {
 
 /* Remove element with given "id" from database at "fd". */
 void dbDeleteById(int fd, unsigned int id) {
-    page *p = createPage();
+    page *p = createPage(PAGE_TYPE_DATA);
     fetchPage(fd, p, 0);
 
     pageDeleteById(p, id);
