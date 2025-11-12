@@ -213,13 +213,10 @@ int main(void) {
 
     // dbSearchById(fd, 0);
 
-    // dbPush(fd, 101, "101", "101@danielfalbo.com");
-    // dbPush(fd, 102, "102", "102@danielfalbo.com");
     // dbPush(fd, 103, "103", "103@danielfalbo.com");
-    // dbPush(fd, 104, "104", "104@danielfalbo.com");
-    // dbPush(fd, 105, "105", "105@danielfalbo.com");
+    // dbPush(fd, 101, "101", "101@danielfalbo.com");
     // dbPush(fd, 106, "106", "106@danielfalbo.com");
-    // dbPush(fd, 107, "107", "107@danielfalbo.com");
+    // dbPush(fd, 102, "102", "102@danielfalbo.com");
 
     // dbDeleteById(fd, 102);
     // dbDeleteById(fd, 103);
