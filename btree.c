@@ -168,11 +168,17 @@ void printBtreePage(page *p) {
     fprintf(stdout, "==================\n");
 }
 
-/* ======================= Disk operations ======================== */
+/* ============ Low-level disk operations ================ */
 
 /* Dumps page 'p' as the 'n'th page of the 'fd' file. */
 void dumpPage(int fd, page *p, unsigned int n) {
     lseek(fd, n * sizeof(page), SEEK_SET);
+    write(fd, p, sizeof(page));
+}
+
+/* Appends page 'p' at the end of the 'fd' file. */
+void appendPage(int fd, page *p) {
+    lseek(fd, 0, SEEK_END);
     write(fd, p, sizeof(page));
 }
 
@@ -182,7 +188,15 @@ void fetchPage(int fd, page *p, unsigned int n) {
     read(fd, p, sizeof(page));
 }
 
-/* ======================= Disk database logic ==================== */
+/* Returns the size of database at file 'fd' as number of pages. */
+unsigned int dbSize(int fd) {
+    lseek(fd, 0, SEEK_SET);
+    off_t file_size = lseek(fd, 0, SEEK_END);
+    return file_size / sizeof(page);
+}
+
+/* ================ Database operations ==================
+ * All database operations will perform disk I/O. */
 
 /* Opens the database file, returns the file descriptor, and
  * loads the root in memory. If the file does not exist, it creates it
@@ -224,10 +238,10 @@ void dbPrintPage(int fd, int n) {
 /* Insert new element onto database at 'fd'. */
 void dbPush(int fd, unsigned int id, char *name, char *email) {
     page *p = createPage(PAGE_TYPE_DATA);
-    fetchPage(fd, p, 0);
-
     dataPagePush(p, id, name, email);
-    dumpPage(fd, p, 0);
+
+    int n = dbSize(fd);
+    dumpPage(fd, p, n);
 
     free(p);
 }
@@ -253,6 +267,12 @@ void dbDeleteById(int fd, unsigned int id) {
     free(p);
 }
 
+void dbWalk(int fd) {
+    unsigned int n = dbSize(fd);
+    fprintf(stdout, "The database is currently %u pages big.\n", n);
+    for (unsigned int j = 0; j < n; j++) dbPrintPage(fd, j);
+}
+
 /* ======================= Main =================================== */
 
 int main(void) {
@@ -260,11 +280,17 @@ int main(void) {
 
     page *root = NULL;
     int fd = dbOpenOrCreate(root);
-    dbPrintPage(fd, 0);
 
-    // dbSearchById(fd, 0);
+    // dbPrintPage(fd, 0);
+
+    // dbPush(fd, 0, "daniel", "hello@danielfalbo.com");
+
+    dbWalk(fd);
 
     // dbPush(fd, 103, "103", "103@danielfalbo.com");
+
+    // dbSearchById(101, 0);
+    // dbSearchById(103, 0);
     // dbPush(fd, 101, "101", "101@danielfalbo.com");
 
     // dbDeleteById(fd, 103);
