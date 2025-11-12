@@ -18,9 +18,48 @@ typedef struct entry {
 
 #define ROWS_PER_PAGE (PAGE_SIZE_BYTES / sizeof(entry))
 typedef struct page {
-    unsigned int len;
+    /* Buffer of ROWS_PER_PAGE entries. */
     entry rows[ROWS_PER_PAGE];
+
+    /* Count of rows actually present in the buffer. */
+    unsigned int len;
+
 } page;
+
+#define BTREE_MIN_KEYS 4
+// #define BTREE_MAX_KEYS 255
+#define BTREE_MAX_KEYS 7
+typedef struct btree_node {
+    /* Ids of entries whose pointers are stored within this node. */
+    unsigned int keys[BTREE_MAX_KEYS];
+
+    /* Count of keys actually present in the node.
+     * BTREE_MIN_KEYS <= len <= BTREE_MAX_KEYS for all nodes except root. */
+    unsigned int len;
+
+
+    /* Indices of disk pages containing entries data.
+     *
+     * Entry data for 'keys[i]' will be at 'values[i]'th page on disk.
+     *
+     * It is up to the consumer to multiply this index by PAGE_SIZE_BYTES
+     * when seeking to the disk location. */
+    unsigned int values[BTREE_MAX_KEYS];
+
+    /* Indices of disk pages containing this node's children.
+     *
+     * 'children[i]' will be the b-subtree of keys larger than
+     * 'keys[i-1]' and smaller than 'keys[i]'
+     *
+     *          keys[0]     keys[i]     keys[2]    keys[3]
+     *       /           /           /           /          \
+     *      /           /           /           /            \
+     * children[0] children[1] children[2] children[3]  children[4]
+     *
+     * It is up to the consumer to multiply this index by PAGE_SIZE_BYTES
+     * when seeking to the disk location. */
+    unsigned int children[BTREE_MAX_KEYS+1];
+} btree_node;
 
 void printConfiguration(void) {
     fprintf(stdout, "DB_FILENAME: %s\n", DB_FILENAME);
@@ -28,7 +67,10 @@ void printConfiguration(void) {
     fprintf(stdout, "sizeof(entry): %lu\n", sizeof(entry));
     fprintf(stdout, "PAGE_SIZE_BYTES: %d\n", PAGE_SIZE_BYTES);
     fprintf(stdout, "sizeof(page): %lu\n", sizeof(page));
+    fprintf(stdout, "sizeof(btree_node): %lu\n", sizeof(btree_node));
     fprintf(stdout, "ROWS_PER_PAGE: %lu\n", ROWS_PER_PAGE);
+    fprintf(stdout, "BTREE_MIN_KEYS: %d\n", BTREE_MIN_KEYS);
+    fprintf(stdout, "BTREE_MAX_KEYS: %d\n", BTREE_MAX_KEYS);
     fprintf(stdout, "=============\n\n");
 }
 
@@ -109,13 +151,13 @@ void pageDeleteById(page *p, unsigned int id) {
 /* ======================= Disk operations ======================== */
 
 /* Dumps page 'p' as the 'n'th page of the 'fd' file. */
-void dumpPage(int fd, page *p, int n) {
+void dumpPage(int fd, page *p, unsigned int n) {
     lseek(fd, n * PAGE_SIZE_BYTES, SEEK_SET);
     write(fd, p, sizeof(page));
 }
 
 /* Loads the 'n'th page from the 'fd' file to 'p'. */
-void loadPage(int fd, page *p, int n) {
+void loadPage(int fd, page *p, unsigned int n) {
     lseek(fd, n * PAGE_SIZE_BYTES, SEEK_SET);
     read(fd, p, sizeof(page));
 }
