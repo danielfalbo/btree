@@ -55,7 +55,7 @@ page *createPage(void) {
 
 /* ======================= Page operations ======================== */
 
-/* Add the new element at the end of the table 't'. */
+/* Add the new element at the end of the page 'p'. */
 void pagePush(page *p, unsigned int id, char *name, char *email) {
     if (p->len == ROWS_PER_PAGE) {
         fprintf(stderr, "Out of space pushing entry to page\n");
@@ -91,7 +91,20 @@ void pageSearchById(page *p, unsigned int id) {
     fprintf(stdout, "Entry %u not found in page\n", id);
 }
 
-// TODO: pageDeleteById
+/* Remove element with given "id" from page "p". */
+void pageDeleteById(page *p, unsigned int id) {
+    for (size_t j = 0; j < p->len; j++) {
+        entry e = p->rows[j];
+        if (e.id == id) {
+            p->len--;
+            for (size_t i = j+1; i < p->len; i++) {
+                p->rows[i] = p->rows[i+1];
+            }
+            return;
+        }
+    }
+    fprintf(stdout, "Entry %u not found in page\n", id);
+}
 
 /* ======================= Disk operations ======================== */
 
@@ -123,10 +136,12 @@ int main(void) {
     loadPage(fd, p, 0);
     printPage(p);
 
-    // pagePush(p, -1, "name", "neg@danielfalbo.com");
+    // pagePush(p, 0, "hello", "hello@danielfalbo.com");
     // printPage(p);
-    pageSearchById(p, 100);
-    pageSearchById(p, 43);
+    // pageSearchById(p, 100);
+    // pageSearchById(p, 43);
+    // pageDeleteById(p, 0);
+    // printPage(p);
 
     dumpPage(fd, p, 0);
     free(p);
