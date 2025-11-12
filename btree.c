@@ -54,19 +54,6 @@ page *createPage(void) {
 }
 
 /* ======================= Page operations ======================== */
-
-/* Add the new element at the end of the page 'p'. */
-void pagePush(page *p, unsigned int id, char *name, char *email) {
-    if (p->len == ROWS_PER_PAGE) {
-        fprintf(stderr, "Out of space pushing entry to page\n");
-        exit(1);
-    }
-    p->rows[p->len].id = id;
-    snprintf(p->rows[p->len].name, STR_LEN, "%s", name);
-    snprintf(p->rows[p->len].email, STR_LEN, "%s", email);
-    p->len++;
-}
-
 void printEntry(entry *o) {
     fprintf(stdout, "entry(%u, %s, %s)\n", o->id, o->name, o->email);
 }
@@ -78,6 +65,18 @@ void printPage(page *p) {
         printEntry(&e);
     }
     fprintf(stdout, "============\n");
+}
+
+/* Add the new element at the end of the page 'p'. */
+void pagePush(page *p, unsigned int id, char *name, char *email) {
+    if (p->len == ROWS_PER_PAGE) {
+        fprintf(stderr, "Out of space pushing entry to page\n");
+        exit(1);
+    }
+    p->rows[p->len].id = id;
+    snprintf(p->rows[p->len].name, STR_LEN, "%s", name);
+    snprintf(p->rows[p->len].email, STR_LEN, "%s", email);
+    p->len++;
 }
 
 void pageSearchById(page *p, unsigned int id) {
@@ -120,11 +119,13 @@ void loadPage(int fd, page *p, int n) {
     read(fd, p, sizeof(page));
 }
 
-// TODO: file INSERT
+/* ======================= Disk database logic ==================== */
 
-// TODO: file SELECT
+// TODO: disk INSERT
 
-// TODO: file DELETE
+// TODO: disk SELECT
+
+// TODO: disk DELETE
 
 /* ======================= Main =================================== */
 
