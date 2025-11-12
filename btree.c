@@ -88,7 +88,7 @@ void pageSearchById(page *p, unsigned int id) {
             return;
         }
     }
-    fprintf(stdout, "Entry %u not found in page\n", id);
+    fprintf(stdout, "Entry %u not found in page when searching\n", id);
 }
 
 /* Remove element with given "id" from page "p". */
@@ -103,7 +103,7 @@ void pageDeleteById(page *p, unsigned int id) {
             return;
         }
     }
-    fprintf(stdout, "Entry %u not found in page\n", id);
+    fprintf(stdout, "Entry %u not found in page when deleting\n", id);
 }
 
 /* ======================= Disk operations ======================== */
@@ -122,32 +122,61 @@ void loadPage(int fd, page *p, int n) {
 
 /* ======================= Disk database logic ==================== */
 
-// TODO: disk INSERT
+/* Print the 'n'th page of database at 'fd'. */
+void dbPrintPage(int fd, int n) {
+    page *p = createPage();
+    loadPage(fd, p, n);
 
-// TODO: disk SELECT
+    printPage(p);
 
-// TODO: disk DELETE
+    free(p);
+}
+
+/* Insert new element onto database at 'fd'. */
+void dbPush(int fd, unsigned int id, char *name, char *email) {
+    page *p = createPage();
+    loadPage(fd, p, 0);
+
+    pagePush(p, id, name, email);
+    dumpPage(fd, p, 0);
+
+    free(p);
+}
+
+/* Search element with given 'id' within database at 'fd'. */
+void dbSearchById(int fd, unsigned int id) {
+    page *p = createPage();
+    loadPage(fd, p, 0);
+
+    pageSearchById(p, id);
+
+    free(p);
+}
+
+/* Remove element with given "id" from database at "fd". */
+void dbDeleteById(int fd, unsigned int id) {
+    page *p = createPage();
+    loadPage(fd, p, 0);
+
+    pageDeleteById(p, id);
+    dumpPage(fd, p, 0);
+
+    free(p);
+}
 
 /* ======================= Main =================================== */
 
 int main(void) {
     printConfiguration();
-
     int fd = open(DB_FILENAME, O_CREAT | O_RDWR, 0644);
-    page *p = createPage();
-    loadPage(fd, p, 0);
-    printPage(p);
 
-    // pagePush(p, 0, "hello", "hello@danielfalbo.com");
-    // printPage(p);
-    // pageSearchById(p, 100);
-    // pageSearchById(p, 43);
-    // pageDeleteById(p, 0);
-    // printPage(p);
+    // dbPrintPage(fd, 0);
+    // dbSearchById(fd, 0);
+    // dbPush(fd, 101, "101", "101@danielfalbo.com");
+    // dbPrintPage(fd, 0);
+    dbDeleteById(fd, 101);
+    dbPrintPage(fd, 0);
 
-    dumpPage(fd, p, 0);
-    free(p);
     close(fd);
-
     return 0;
 }
