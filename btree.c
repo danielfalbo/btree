@@ -129,18 +129,6 @@ void dataPagePush(page *p, unsigned int id, char *name, char *email) {
     p->len++;
 }
 
-/* Search element with given 'id' within page 'p'. */
-void dataPageSearchById(page *p, unsigned int id) {
-    for (size_t j = 0; j < p->len; j++) {
-        entry e = p->data.rows[j];
-        if (e.id == id) {
-            printEntry(&e);
-            return;
-        }
-    }
-    fprintf(stdout, "Entry %u not found in page when searching\n", id);
-}
-
 /* Remove element with given "id" from page "p". */
 void dataPageDeleteById(page *p, unsigned int id) {
     for (size_t j = 0; j < p->len; j++) {
@@ -161,11 +149,23 @@ void dataPageDeleteById(page *p, unsigned int id) {
 void printBtreePage(page *p) {
     fprintf(stdout, "=== btree page ===\n");
     for (size_t j = 0; j < p->len; j++) {
-        int key = p->node.keys[j];
-        fprintf(stdout, "%d", key);
+        fprintf(stdout, "key: %u, value page: %u, child page: %u\n",
+                p->node.keys[j], p->node.values[j], p->node.children[j]);
     }
     fprintf(stdout, "==================\n");
 }
+
+/* Search element with given 'id' within btree node page 'p'.
+ * Returns the index of the element within the page, or -1 if not present. */
+int btreePageSearchById(page *p, unsigned int id) {
+    for (size_t j = 0; j < p->len; j++) {
+        if (p->node.keys[j] == id) {
+            return j;
+        }
+    }
+    return -1;
+}
+
 
 /* ============ Low-level disk operations ================ */
 
@@ -200,14 +200,15 @@ unsigned int dbSize(int fd) {
 /* Opens the database file, returns the file descriptor, and
  * loads the root in memory. If the file does not exist, it creates it
  * and dumps an empty root node at offset 0. */
-int dbOpenOrCreate(page *root) {
+int dbOpenOrCreate(void) {
     int fd;
     fd = open(DB_FILENAME, O_RDWR, 0644);
     if (fd == -1) {
         if (errno == ENOENT) {
             fd = open(DB_FILENAME, O_RDWR | O_CREAT, 0644);
-            root = createPage(PAGE_TYPE_BTREE);
+            page *root = createPage(PAGE_TYPE_BTREE);
             dumpPage(fd, root, 0);
+            free(root);
         } else {
             perror("Opening database file");
             exit(1);
@@ -243,28 +244,39 @@ void dbPush(int fd, unsigned int id, char *name, char *email) {
     dumpPage(fd, p, n);
 
     free(p);
+
+    p = createPage(PAGE_TYPE_BTREE);
+    fetchPage(fd, p, 0);
+
+    p->node.keys[p->len] = id;
+    p->node.values[p->len] = n;
+    p->len++;
+
+    dumpPage(fd, p, 0);
+    free(p);
 }
 
 /* Search element with given 'id' within database at 'fd'. */
 void dbSearchById(int fd, unsigned int id) {
-    page *p = createPage(PAGE_TYPE_DATA);
+    page *p = createPage(PAGE_TYPE_BTREE);
     fetchPage(fd, p, 0);
-
-    dataPageSearchById(p, id);
-
+    int j = btreePageSearchById(p, id);
+    unsigned int valuePage = p->node.values[j];
     free(p);
+
+    dbPrintPage(fd, valuePage);
 }
 
-/* Remove element with given "id" from database at "fd". */
-void dbDeleteById(int fd, unsigned int id) {
-    page *p = createPage(PAGE_TYPE_DATA);
-    fetchPage(fd, p, 0);
-
-    dataPageDeleteById(p, id);
-    dumpPage(fd, p, 0);
-
-    free(p);
-}
+// /* Remove element with given "id" from database at "fd". */
+// void dbDeleteById(int fd, unsigned int id) {
+//     page *p = createPage(PAGE_TYPE_DATA);
+//     fetchPage(fd, p, 0);
+//
+//     dataPageDeleteById(p, id);
+//     dumpPage(fd, p, 0);
+//
+//     free(p);
+// }
 
 void dbWalk(int fd) {
     unsigned int n = dbSize(fd);
@@ -277,24 +289,18 @@ void dbWalk(int fd) {
 int main(void) {
     printConfiguration();
 
-    page *root = NULL;
-    int fd = dbOpenOrCreate(root);
+    int fd = dbOpenOrCreate();
 
     // dbPrintPage(fd, 0);
 
     // dbPush(fd, 0, "daniel", "hello@danielfalbo.com");
 
-    dbWalk(fd);
+    // dbWalk(fd);
 
-    // dbPush(fd, 103, "103", "103@danielfalbo.com");
-
-    // dbSearchById(101, 0);
-    // dbSearchById(103, 0);
-    // dbPush(fd, 101, "101", "101@danielfalbo.com");
+    dbSearchById(fd, 0);
 
     // dbDeleteById(fd, 103);
 
-    free(root);
     close(fd);
     return 0;
 }
