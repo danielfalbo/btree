@@ -30,13 +30,12 @@ typedef struct page {
 // #define BTREE_MAX_KEYS 255
 #define BTREE_MAX_KEYS 7
 typedef struct btree_node {
-    /* Ids of entries whose pointers are stored within this node. */
-    unsigned int keys[BTREE_MAX_KEYS];
-
     /* Count of keys actually present in the node.
      * BTREE_MIN_KEYS <= len <= BTREE_MAX_KEYS for all nodes except root. */
     unsigned int len;
 
+    /* Ids of entries whose pointers are stored within this node. */
+    unsigned int keys[BTREE_MAX_KEYS];
 
     /* Indices of disk pages containing entries data.
      *
