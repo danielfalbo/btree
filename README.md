@@ -6,7 +6,7 @@ on-disk data structure, aimed at performing create, read and delete operations w
 
 ## skeptical AI prompt for learning
 
-```
+```llm
 <btree.c>
 
 I'm the godfather of b-trees.
