@@ -92,8 +92,7 @@ void *xmalloc(size_t size) {
     return ptr;
 }
 
-/* =================== Object related functions ===================
- * The following functions allocate objects of different types. */
+/* =================== Object related functions =================== */
 
 /* Allocate and initialize a new page object. */
 page *createPage(int type) {
@@ -294,7 +293,6 @@ int main(void) {
     // dbPush(fd, 101, "101", "101@danielfalbo.com");
 
     // dbDeleteById(fd, 103);
-
 
     free(root);
     close(fd);
