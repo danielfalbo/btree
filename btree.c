@@ -79,6 +79,7 @@ void pagePush(page *p, unsigned int id, char *name, char *email) {
     p->len++;
 }
 
+/* Search element with given 'id' within page 'p'. */
 void pageSearchById(page *p, unsigned int id) {
     for (size_t j = 0; j < p->len; j++) {
         entry e = p->rows[j];
