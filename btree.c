@@ -69,6 +69,9 @@ typedef struct page {
     };
 } page;
 
+/* We will make sure the btree root node is always the first page on disk. */
+#define BTREE_ROOT_PAGE_OFFSET 0
+
 void printConfiguration(void) {
     fprintf(stdout, "DB_FILENAME: %s\n", DB_FILENAME);
     fprintf(stdout, "STR_LEN: %d\n", STR_LEN);
@@ -78,7 +81,6 @@ void printConfiguration(void) {
     fprintf(stdout, "ROWS_PER_PAGE: %lu\n", ROWS_PER_PAGE);
     fprintf(stdout, "BTREE_MIN_KEYS: %d\n", BTREE_MIN_KEYS);
     fprintf(stdout, "BTREE_MAX_KEYS: %d\n", BTREE_MAX_KEYS);
-    fprintf(stdout, "=============\n\n");
 }
 
 /* =================== Allocation wrappers ======================== */
@@ -114,7 +116,6 @@ void printDataPage(page *p) {
         entry e = p->data.rows[j];
         printEntry(&e);
     }
-    fprintf(stdout, "=================\n");
 }
 
 /* Add the new element at the end of the page 'p'. */
@@ -152,7 +153,6 @@ void printBtreePage(page *p) {
         fprintf(stdout, "key: %u, value page: %u, child page: %u\n",
                 p->node.keys[j], p->node.values[j], p->node.children[j]);
     }
-    fprintf(stdout, "==================\n");
 }
 
 /* Search element with given 'id' within btree node page 'p'.
@@ -237,7 +237,7 @@ int dbOpenOrCreate(void) {
         if (errno == ENOENT) {
             fd = open(DB_FILENAME, O_RDWR | O_CREAT, 0644);
             page *root = createPage(PAGE_TYPE_BTREE);
-            dumpPage(fd, root, 0);
+            dumpPage(fd, root, BTREE_ROOT_PAGE_OFFSET);
             free(root);
         } else {
             perror("Opening database file");
@@ -269,7 +269,7 @@ void dbPrintPage(int fd, int n) {
 void dbInsert(int fd, unsigned int id, char *name, char *email) {
     /* Insert new node with key 'id' onto b-tree. */
     page *n = createPage(PAGE_TYPE_BTREE);
-    fetchPage(fd, n, 0);
+    fetchPage(fd, n, BTREE_ROOT_PAGE_OFFSET);
     int i = btreePageInsert(n, id);
     if (i == -1) {
         fprintf(stdout, "Key %u already present in database.\n", id);
@@ -289,7 +289,7 @@ void dbInsert(int fd, unsigned int id, char *name, char *email) {
         n->node.values[i] = nth;
 
         /* Dump updated btree node on disk.  */
-        dumpPage(fd, n, 0);
+        dumpPage(fd, n, BTREE_ROOT_PAGE_OFFSET);
     }
 
 exit:
@@ -337,7 +337,7 @@ int main(void) {
 
     // dbPrintPage(fd, 0);
 
-    dbInsert(fd, 999, "foo", "foo@danielfalbo.com");
+    dbInsert(fd, 999, "_", "@");
 
     dbWalk(fd);
 
