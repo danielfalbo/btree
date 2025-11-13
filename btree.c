@@ -282,10 +282,8 @@ void dbInsert(int fd, unsigned int id, char *name, char *email) {
     int i = btreePageInsert(n, id);
     if (i == -1) {
         fprintf(stdout, "Key %u already present in database.\n", id);
-        goto exit;
     } else if (i == -2) {
         fprintf(stdout, "Btree node full inserting %u.\n", id);
-        goto exit;
     } else {
         /* Write data onto new page on disk.  */
         page *p = createPage(PAGE_TYPE_DATA);
@@ -300,8 +298,6 @@ void dbInsert(int fd, unsigned int id, char *name, char *email) {
         /* Dump updated btree node on disk.  */
         dumpPage(fd, n, BTREE_ROOT_PAGE_OFFSET);
     }
-
-exit:
     free(n);
 }
 
@@ -337,8 +333,6 @@ int main(void) {
     printConfiguration();
 
     int fd = dbOpenOrCreate();
-
-    // printPage(fd, 0);
 
     dbInsert(fd, 999, "_", "@");
 
