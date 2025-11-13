@@ -166,6 +166,14 @@ int btreePageSearchById(page *p, unsigned int id) {
     return -1;
 }
 
+/* Insert new element with key 'id' whose data is stored on disk
+ * at 'nth' page onto btree node 'p' keeping keys in sorted order.
+ * It is up to the caller to write this page to disk afterwaards if needed. */
+void btreePageInsert(page *p, unsigned int id, unsigned int nth) {
+    p->node.keys[p->len] = id;
+    p->node.values[p->len] = nth;
+    p->len++;
+}
 
 /* ============ Low-level disk operations ================ */
 
@@ -238,38 +246,35 @@ void dbPrintPage(int fd, int n) {
 /* Insert new element onto database at 'fd'. */
 void dbPush(int fd, unsigned int id, char *name, char *email) {
     page *p = createPage(PAGE_TYPE_DATA);
+
+    /* Write data onto new page on disk.  */
     dataPagePush(p, id, name, email);
-
-    int n = dbSize(fd);
-    dumpPage(fd, p, n);
-
+    int nth = dbSize(fd);
+    dumpPage(fd, p, nth);
     free(p);
 
+    /* Update b-tree with new node and pointer to its data page on disk. */
     p = createPage(PAGE_TYPE_BTREE);
     fetchPage(fd, p, 0);
-
-    p->node.keys[p->len] = id;
-    p->node.values[p->len] = n;
-    p->len++;
-
+    btreePageInsert(p, id, nth);
     dumpPage(fd, p, 0);
     free(p);
 }
 
 /* Search element with given 'id' within database at 'fd'. */
-void dbSearchById(int fd, unsigned int id) {
-    page *p = createPage(PAGE_TYPE_BTREE);
-    fetchPage(fd, p, 0);
-    int j = btreePageSearchById(p, id);
-    if (j == -1) {
-        fprintf(stdout, "Key %u not found in database.", id);
-        return;
-    }
-    unsigned int valuePage = p->node.values[j];
-    free(p);
-
-    dbPrintPage(fd, valuePage);
-}
+// void dbSearchById(int fd, unsigned int id) {
+//     page *p = createPage(PAGE_TYPE_BTREE);
+//     fetchPage(fd, p, 0);
+//     int j = btreePageSearchById(p, id);
+//     if (j == -1) {
+//         fprintf(stdout, "Key %u not found in database.", id);
+//         return;
+//     }
+//     unsigned int valuePage = p->node.values[j];
+//     free(p);
+//
+//     dbPrintPage(fd, valuePage);
+// }
 
 // /* Remove element with given "id" from database at "fd". */
 // void dbDeleteById(int fd, unsigned int id) {
@@ -297,9 +302,9 @@ int main(void) {
 
     // dbPrintPage(fd, 0);
 
-    // dbPush(fd, 0, "daniel", "hello@danielfalbo.com");
+    // dbPush(fd, 10, "z", "z@danielfalbo.com");
 
-    // dbWalk(fd);
+    dbWalk(fd);
 
     // dbSearchById(fd, 10);
 
