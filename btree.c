@@ -176,14 +176,12 @@ int btreePageSearchById(page *p, unsigned int id) {
  * and to write the btree page 'p' to disk afterwards if needed. */
 size_t btreePageInsert(page *p, unsigned int id) {
     if (p->len == BTREE_MAX_KEYS) {
-        fprintf(stdout, "Error inserting onto btree node: max keys reached.\n");
         return -2;
     }
 
     size_t i = 0;
     while (i < p->len && p->node.keys[i] < id) { i++; }
     if (i < p->len && p->node.keys[i] == id) {
-        fprintf(stdout, "Key %d already present in page.\n", id);
         return -1;
     }
 
@@ -339,8 +337,7 @@ int main(void) {
 
     // dbPrintPage(fd, 0);
 
-    dbInsert(fd, 10, "z", "z@danielfalbo.com");
-    dbInsert(fd, 5, "z", "z@danielfalbo.com");
+    dbInsert(fd, 999, "foo", "foo@danielfalbo.com");
 
     dbWalk(fd);
 
