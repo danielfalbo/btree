@@ -340,7 +340,7 @@ int main(void) {
 
     // printPage(fd, 0);
 
-    // dbInsert(fd, 999, "_", "@");
+    dbInsert(fd, 999, "_", "@");
 
     diskWalk(fd);
 
