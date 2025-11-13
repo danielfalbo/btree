@@ -217,11 +217,38 @@ void fetchPage(int fd, page *p, unsigned int n) {
     read(fd, p, sizeof(page));
 }
 
+/* ============ Logical disk operations ================== */
+
+/* Print the 'n'th page of database at 'fd'. */
+void dbPrintPage(int fd, int n) {
+    page *p = createPage(-1);
+    fetchPage(fd, p, n);
+    switch (p->type) {
+    case PAGE_TYPE_DATA:
+        printDataPage(p);
+        break;
+    case PAGE_TYPE_BTREE:
+        printBtreePage(p);
+        break;
+    default:
+        fprintf(stdout, "?");
+        break;
+    }
+    free(p);
+}
+
 /* Returns the size of database at file 'fd' as number of pages. */
 unsigned int dbSize(int fd) {
     lseek(fd, 0, SEEK_SET);
     off_t file_size = lseek(fd, 0, SEEK_END);
     return file_size / sizeof(page);
+}
+
+/* Print content of every page on disk, both data and btree pages. */
+void dbWalk(int fd) {
+    unsigned int n = dbSize(fd);
+    fprintf(stdout, "The database is currently %u pages big.\n", n);
+    for (unsigned int j = 0; j < n; j++) dbPrintPage(fd, j);
 }
 
 /* ================ Database operations ==================
@@ -245,24 +272,6 @@ int dbOpenOrCreate(void) {
         }
     }
     return fd;
-}
-
-/* Print the 'n'th page of database at 'fd'. */
-void dbPrintPage(int fd, int n) {
-    page *p = createPage(-1);
-    fetchPage(fd, p, n);
-    switch (p->type) {
-    case PAGE_TYPE_DATA:
-        printDataPage(p);
-        break;
-    case PAGE_TYPE_BTREE:
-        printBtreePage(p);
-        break;
-    default:
-        fprintf(stdout, "?");
-        break;
-    }
-    free(p);
 }
 
 /* Insert new element onto database at 'fd'. */
@@ -322,12 +331,6 @@ exit:
 //     free(p);
 // }
 
-void dbWalk(int fd) {
-    unsigned int n = dbSize(fd);
-    fprintf(stdout, "The database is currently %u pages big.\n", n);
-    for (unsigned int j = 0; j < n; j++) dbPrintPage(fd, j);
-}
-
 /* ========================== Main ================================ */
 
 int main(void) {
@@ -337,7 +340,7 @@ int main(void) {
 
     // dbPrintPage(fd, 0);
 
-    dbInsert(fd, 999, "_", "@");
+    // dbInsert(fd, 999, "_", "@");
 
     dbWalk(fd);
 
