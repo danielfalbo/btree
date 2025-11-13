@@ -38,3 +38,27 @@ Do you think they understand what they are doing?
 - [Carnegie Mellon University Database Group](https://www.youtube.com/@CMUDatabaseGroup)
 - ["Databases on SSDs" by Josiah Carlson](https://www.dr-josiah.com/2010/08/databases-on-ssds-initial-ideas-on.html)
 - ["Understanding B-Trees" by Spanning Tree](https://youtu.be/K1a2Bk8NrYQ)
+- [B-Tree Visualization by University of San Francisco](https://www.cs.usfca.edu/~galles/visualization/BTree.html)
+
+## known limitations
+
+- we use 1 entire data page per row, when ROWS_PER_PAGE would fit in a page,
+therefore using much more disk space than necessary. this is because the goal
+of this project is just to implement a toy b-tree whose goal is to minimize
+the number of I/O operations, not disk space.
+- we use the same struct with union overlap for both btree nodes and data
+pages, and attempt to reach IDEAL_PAGE_SIZE_BYTES by tweaking BTREE_MAX_KEYS
+and rows string fields length STR_LEN. this could probably be improved in
+practice for both primary and disk memory efficiency as well as safety and
+precision about the page size. for the sake of learning, thinking in terms of
+page indices instead of raw disk offets came more natural to me while learning.
+I also just wanted to play around and practice with anonymous `union`s: they
+are really cool to me.
+- we iterate through the keys in btree nodes instead of binary searching. this
+is beacause, once again, I wanted to focus on building a b-tree to minimize
+disk I/O operations, the real bottleneck, for this project so I didn't bother
+with the in-memory binary search.
+- we do syscalls to deal with files instead of using the more portable C lib.
+we still didn't do anyting fancy, so search and replacing
+`read(fd, p, sizeof(page));`s with `fread(p, 1, sizeof(page), f)`s would
+probably make everything stdc-compatible.
