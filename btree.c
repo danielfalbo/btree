@@ -32,7 +32,7 @@ typedef struct page {
      *
      * For btree nodes: count of keys actually present in the node.
      * BTREE_MIN_KEYS <= len <= BTREE_MAX_KEYS for all nodes except root. */
-    unsigned int len;
+    size_t len;
 
     union {
         struct {
@@ -166,13 +166,37 @@ int btreePageSearchById(page *p, unsigned int id) {
     return -1;
 }
 
-/* Insert new element with key 'id' whose data is stored on disk
- * at 'nth' page onto btree node 'p' keeping keys in sorted order.
- * It is up to the caller to write this page to disk afterwaards if needed. */
-void btreePageInsert(page *p, unsigned int id, unsigned int nth) {
-    p->node.keys[p->len] = id;
-    p->node.values[p->len] = nth;
+/* Insert new element with key 'id' onto btree node 'p' keeping keys sorted.
+ *
+ * Returns the index 'i' of the new key within the node,
+ * or -1 if the key already exists,
+ * or -2 if node already stores BTREE_MAX_KEYS.
+ *
+ * It's up to the caller to set the disk value page pointer 'p->node.values[i]'
+ * and to write the btree page 'p' to disk afterwards if needed. */
+size_t btreePageInsert(page *p, unsigned int id) {
+    if (p->len == BTREE_MAX_KEYS) {
+        fprintf(stdout, "Error inserting onto btree node: max keys reached.\n");
+        return -2;
+    }
+
+    size_t i = 0;
+    while (i < p->len && p->node.keys[i] < id) { i++; }
+    if (i < p->len && p->node.keys[i] == id) {
+        fprintf(stdout, "Key %d already present in page.\n", id);
+        return -1;
+    }
+
+    for (size_t j = p->len; j > i; j--) {
+        p->node.keys[j] = p->node.keys[j-1];
+        p->node.values[j] = p->node.values[j-1];
+        p->node.children[j] = p->node.children[j-1];
+    }
+
+    p->node.keys[i] = id;
+
     p->len++;
+    return i;
 }
 
 /* ============ Low-level disk operations ================ */
@@ -244,21 +268,34 @@ void dbPrintPage(int fd, int n) {
 }
 
 /* Insert new element onto database at 'fd'. */
-void dbPush(int fd, unsigned int id, char *name, char *email) {
-    page *p = createPage(PAGE_TYPE_DATA);
+void dbInsert(int fd, unsigned int id, char *name, char *email) {
+    /* Insert new node with key 'id' onto b-tree. */
+    page *n = createPage(PAGE_TYPE_BTREE);
+    fetchPage(fd, n, 0);
+    int i = btreePageInsert(n, id);
+    if (i == -1) {
+        fprintf(stdout, "Key %u already present in database.\n", id);
+        goto exit;
+    } else if (i == -2) {
+        fprintf(stdout, "Btree node full inserting %u.\n", id);
+        goto exit;
+    } else {
+        /* Write data onto new page on disk.  */
+        page *p = createPage(PAGE_TYPE_DATA);
+        dataPagePush(p, id, name, email);
+        int nth = dbSize(fd);
+        dumpPage(fd, p, nth);
+        free(p);
 
-    /* Write data onto new page on disk.  */
-    dataPagePush(p, id, name, email);
-    int nth = dbSize(fd);
-    dumpPage(fd, p, nth);
-    free(p);
+        /* Set the new node's data disk page pointer.  */
+        n->node.values[i] = nth;
 
-    /* Update b-tree with new node and pointer to its data page on disk. */
-    p = createPage(PAGE_TYPE_BTREE);
-    fetchPage(fd, p, 0);
-    btreePageInsert(p, id, nth);
-    dumpPage(fd, p, 0);
-    free(p);
+        /* Dump updated btree node on disk.  */
+        dumpPage(fd, n, 0);
+    }
+
+exit:
+    free(n);
 }
 
 /* Search element with given 'id' within database at 'fd'. */
@@ -302,7 +339,8 @@ int main(void) {
 
     // dbPrintPage(fd, 0);
 
-    // dbPush(fd, 10, "z", "z@danielfalbo.com");
+    dbInsert(fd, 10, "z", "z@danielfalbo.com");
+    dbInsert(fd, 5, "z", "z@danielfalbo.com");
 
     dbWalk(fd);
 
