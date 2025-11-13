@@ -37,3 +37,4 @@ Do you think they understand what they are doing?
 - [Redis diskstore google group post](https://groups.google.com/g/redis-db/c/1ES8eGaJvek/m/B2BOh_khrRcJ)
 - [Carnegie Mellon University Database Group](https://www.youtube.com/@CMUDatabaseGroup)
 - ["Databases on SSDs" by Josiah Carlson](https://www.dr-josiah.com/2010/08/databases-on-ssds-initial-ideas-on.html)
+- ["Understanding B-Trees" by Spanning Tree](https://youtu.be/K1a2Bk8NrYQ)
