@@ -64,3 +64,8 @@ with the in-memory binary search.
 we still didn't do anyting fancy, so search and replacing
 `read(fd, p, sizeof(page));`s with `fread(p, 1, sizeof(page), f)`s would
 probably make everything stdc-compatible.
+
+# TODO
+
+- it would be cool to make the database file entirely human-readable.
+- `--feel-the-pain` flag that sleeps 5 extra seconds at every disk read/write.
