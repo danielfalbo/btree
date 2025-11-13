@@ -220,7 +220,7 @@ void fetchPage(int fd, page *p, unsigned int n) {
 /* ============ Logical disk operations ================== */
 
 /* Print the 'n'th page of database at 'fd'. */
-void dbPrintPage(int fd, int n) {
+void printPage(int fd, int n) {
     page *p = createPage(-1);
     fetchPage(fd, p, n);
     switch (p->type) {
@@ -245,10 +245,10 @@ unsigned int dbSize(int fd) {
 }
 
 /* Print content of every page on disk, both data and btree pages. */
-void dbWalk(int fd) {
+void diskWalk(int fd) {
     unsigned int n = dbSize(fd);
     fprintf(stdout, "The database is currently %u pages big.\n", n);
-    for (unsigned int j = 0; j < n; j++) dbPrintPage(fd, j);
+    for (unsigned int j = 0; j < n; j++) printPage(fd, j);
 }
 
 /* ================ Database operations ==================
@@ -317,7 +317,7 @@ exit:
 //     unsigned int valuePage = p->node.values[j];
 //     free(p);
 //
-//     dbPrintPage(fd, valuePage);
+//     printPage(fd, valuePage);
 // }
 
 // /* Remove element with given "id" from database at "fd". */
@@ -338,11 +338,11 @@ int main(void) {
 
     int fd = dbOpenOrCreate();
 
-    // dbPrintPage(fd, 0);
+    // printPage(fd, 0);
 
     // dbInsert(fd, 999, "_", "@");
 
-    dbWalk(fd);
+    diskWalk(fd);
 
     // dbSearchById(fd, 10);
 
