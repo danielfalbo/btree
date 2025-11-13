@@ -2,8 +2,9 @@
 
 on-disk data structure, aimed at performing create, read and delete operations while minimizing i/o reads and writes.
 
-<img src="pic1.jpeg" width="200px" />
-<img src="pic2.jpeg" width="200px" />
+| day 5                               | day 6                               |
+|-------------------------------------|-------------------------------------|
+|<img src="pic1.jpeg" width="200px" />|<img src="pic2.jpeg" width="200px" />|
 
 ## skeptical AI prompt for learning
 
