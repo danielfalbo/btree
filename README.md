@@ -9,8 +9,13 @@ on-disk data structure, aimed at performing create, read and delete operations w
 ## skeptical AI prompt for learning
 
 ```llm
-<btree.c>
+<student README>
+</student README>
 
+<student btree.c>
+</student btree.c>
+
+<professor request>
 I'm the godfather of b-trees and I am here with a C programming expert.
 One of our students is implementing a toy b-tree in pure C.
 This is their progress so far.
@@ -19,9 +24,13 @@ What are they doing wrong?
 Do you see red flags?
 Do you think they understand what they are doing?
 Do you see any correctness bug?
-Is the code elegant and well commented?
-Is the code clear?
-Is the code beautiful?
+Could the code be more elegant and better commented?
+Could the code be more clear?
+Can the code be refactored to be more beautiful?
+Can the code be refactored to be more simple?
+Can the code be refactored to have better abstractions,
+never repeating blocks of code?
+</professors request>
 ```
 
 ## eurekas
@@ -72,7 +81,7 @@ we still didn't do anyting fancy, so search and replacing
 probably make everything stdc-compatible.
 - I'm not sure everything works fine with an odd BTREE_MAX_KEYS, I've only
 tested even BTREE_MAX_KEYS for now.
-- we leak disk storage every time an insertion splits a node, creating 2 new nodes and leaking the space allocated to original on disk forever.
+- we leak disk storage every time an insertion splits a node, creating 2 new nodes and leaking the space allocated to original on disk forever. instead of creating 2 new pages, we should just create 1 new page for the right child and overwrite the original page for the left child. while we do 1 extra disk I/O, the asymptotic is still logarithmic, so I'm happy with this for now.
 
 # TODO
 
