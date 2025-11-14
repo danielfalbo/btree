@@ -432,10 +432,9 @@ void btreePushToParentIfOverfullAndDump(int fd, page *bpage, list *path) {
 
     if (btreeNodePageIdx == BTREE_ROOT_PAGE_INDEX) {
         /* New root. Just move mid key to beginning of "bpage". */
-        bpage->node.keys[0]     = newKey;
-        bpage->node.values[0]   = valuePageIndex;
-        bpage->node.children[0] = lchildPageIndex;
-        bpage->node.children[1] = rchildPageIndex;
+        btreePageSetEntry(bpage, 0,
+                          newKey, valuePageIndex,
+                          lchildPageIndex, rchildPageIndex);
         bpage->len = 1;
 
         dumpPage(fd, bpage, btreeNodePageIdx);
