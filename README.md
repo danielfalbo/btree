@@ -8,16 +8,30 @@ on-disk data structure, aimed at performing create, read and delete operations w
 
 ## skeptical AI prompt for learning
 
-```llm
-<btree.c>
+usually prompted to thinking model.
 
-I'm the godfather of b-trees.
-One of my students is implementing a toy b-tree.
+```llm
+<student's known limitations and TODOs>
+</student's known limitations and TODOs>
+
+<student's btree.c>
+</student's btree.c>
+
+I'm the godfather of b-trees and I am here with a C programming expert.
+One of our students is implementing a toy b-tree in pure C.
 This is their progress so far.
 What do you see from their current implementation?
 What are they doing wrong?
 Do you see red flags?
 Do you think they understand what they are doing?
+Do you see any correctness issue?
+Do you see any bug?
+Could the code be more elegant and better commented?
+Could the code be more clear?
+Can the code be refactored to be more beautiful?
+Can the code be refactored to be more simple?
+Can the code be refactored to have better abstractions,
+never repeating blocks of code?
 ```
 
 ## eurekas
@@ -31,6 +45,8 @@ Do you think they understand what they are doing?
 - what should we assume seek-and-go's complexity to be? should we assume every seek-and-go has the same complexity no matter the location or is the complexity proportional to the distance between the target location and the current seek position? with b-trees are we trying to minimize the seek DISTANCE between reads/writes or are we just trying to minimize the COUNT of reads/writes? is there a difference between multiple sequential reads and writes and multiple random reads and writes? both on SSD and HDD?
 
 ## resources
+
+1. CLRS algorithms book B-trees section.
 
 - [antirez/otree](https://github.com/antirez/otree)
 - [cstack/db_tutorial](https://cstack.github.io/db_tutorial/)
@@ -64,8 +80,14 @@ with the in-memory binary search.
 we still didn't do anyting fancy, so search and replacing
 `read(fd, p, sizeof(page));`s with `fread(p, 1, sizeof(page), f)`s would
 probably make everything stdc-compatible.
+- I'm not sure everything works fine with an odd BTREE_MAX_KEYS, I've only
+tested even BTREE_MAX_KEYS for now.
+- we leak disk storage every time an insertion splits a node, creating 2 new nodes and leaking the space allocated to original on disk forever. instead of creating 2 new pages, we should just create 1 new page for the right child and overwrite the original page for the left child. while we do 1 extra disk I/O, the asymptotic is still logarithmic, so I'm happy with this for now.
 
 # TODO
 
 - it would be cool to make the database file entirely human-readable.
 - `--feel-the-pain` flag that sleeps 5 extra seconds at every disk read/write.
+- implement `DELETE` operation
+- always keep the root in main memory.
+- build a repl.
