@@ -145,7 +145,6 @@ page *createDataPage(void) {
 
 page *createBtreePage(void) {
     page *o = createPage(PAGE_TYPE_BTREE);
-    o->node.children[0] = NULL_CHILD;
     return o;
 }
 
