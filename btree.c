@@ -17,16 +17,16 @@ typedef struct list {
 } list;
 
 #define STR_LEN 58
-typedef struct entry {
+typedef struct dataEntry {
     unsigned int id;
     char name[STR_LEN];
     char email[STR_LEN];
-} entry;
+} dataEntry;
 
 #define PAGE_TYPE_DATA    0
 #define PAGE_TYPE_BTREE   1
 
-#define ROWS_PER_PAGE (IDEAL_PAGE_SIZE_BYTES / sizeof(entry))
+#define ROWS_PER_PAGE (IDEAL_PAGE_SIZE_BYTES / sizeof(dataEntry))
 
 // #define BTREE_MAX_KEYS 338
 #define BTREE_MAX_KEYS 4
@@ -49,7 +49,7 @@ typedef struct page {
     union {
         struct {
             /* Buffer of ROWS_PER_PAGE entries. */
-            entry rows[ROWS_PER_PAGE];
+            dataEntry rows[ROWS_PER_PAGE];
         } data;
 
         struct {
@@ -59,7 +59,7 @@ typedef struct page {
 
             /* Indices of disk pages containing entries data.
             *
-            * Entry data for 'keys[i]' will be at 'values[i]'th page on disk.
+            * Data entry for 'keys[i]' will be at 'values[i]'th page on disk.
             *
             * It is up to the user to multiply this index by sizeof(page)
             * when seeking to the disk location. */
@@ -91,7 +91,7 @@ typedef struct page {
 void printConfiguration(void) {
     fprintf(stdout, "DB_FILENAME: %s\n", DB_FILENAME);
     fprintf(stdout, "STR_LEN: %d\n", STR_LEN);
-    fprintf(stdout, "sizeof(entry): %lu\n", sizeof(entry));
+    fprintf(stdout, "sizeof(dataEntry): %lu\n", sizeof(dataEntry));
     fprintf(stdout, "IDEAL_PAGE_SIZE_BYTES: %d\n", IDEAL_PAGE_SIZE_BYTES);
     fprintf(stdout, "sizeof(page): %lu\n", sizeof(page));
     fprintf(stdout, "ROWS_PER_PAGE: %lu\n", ROWS_PER_PAGE);
@@ -195,22 +195,22 @@ void listFree(list *l) {
 
 /* ======================= Data pages operations ================== */
 
-void printEntry(entry *o) {
-    fprintf(stdout, "entry(%u, %s, %s)\n", o->id, o->name, o->email);
+void printDataEntry(dataEntry *o) {
+    fprintf(stdout, "dataEntry(%u, %s, %s)\n", o->id, o->name, o->email);
 }
 
 void printDataPage(page *p) {
     // fprintf(stdout, "=== data page ===\n");
     for (size_t j = 0; j < p->len; j++) {
-        entry e = p->data.rows[j];
-        printEntry(&e);
+        dataEntry e = p->data.rows[j];
+        printDataEntry(&e);
     }
 }
 
 /* Add the new element at the end of the data page 'p'. */
 void dataPagePush(page *p, unsigned int id, char *name, char *email) {
     if (p->len == ROWS_PER_PAGE) {
-        dieWithHonor("Out of space pushing entry to page\n");
+        dieWithHonor("Out of space pushing dataEntry to page\n");
     }
     p->data.rows[p->len].id = id;
     snprintf(p->data.rows[p->len].name, STR_LEN, "%s", name);
@@ -221,7 +221,7 @@ void dataPagePush(page *p, unsigned int id, char *name, char *email) {
 /* Remove element with given "id" from data page "p". */
 void dataPageDeleteById(page *p, unsigned int id) {
     for (size_t j = 0; j < p->len; j++) {
-        entry e = p->data.rows[j];
+        dataEntry e = p->data.rows[j];
         if (e.id == id) {
             p->len--;
             for (; j < p->len; j++) {
@@ -230,7 +230,7 @@ void dataPageDeleteById(page *p, unsigned int id) {
             return;
         }
     }
-    fprintf(stdout, "Entry %u not found in page when deleting\n", id);
+    fprintf(stdout, "dataEntry %u not found in page when deleting\n", id);
 }
 
 /* ================== Btree nodes operations ====================== */
@@ -456,25 +456,24 @@ void btreeInsert(int fd, page *bpage, list *path,
 /* Insert new element onto database at 'fd'. */
 void dbInsert(int fd, unsigned int id, char *name, char *email) {
     list *path = createList();
-    page *bpage = createBtreePage();
-    size_t i = dbSearchById(fd, bpage, path, id);
-    if (i < bpage->len && bpage->node.keys[i] == id) {
+    page *btreeLeaf = createBtreePage();
+    size_t i = dbSearchById(fd, btreeLeaf, path, id);
+    if (i < btreeLeaf->len && btreeLeaf->node.keys[i] == id) {
         fprintf(stdout, "Key %u already exists in database.\n", id);
         goto exit;
     }
 
-    /* Dump entry to new data page on disk, store page index. */
+    /* Dump dataEntry to new data page on disk, store page index. */
     page *dpage = createDataPage();
     dataPagePush(dpage, id, name, email);
-    unsigned int nth = dbSize(fd);
-    dumpPage(fd, dpage, nth);
+    unsigned int diskDataPageIndex = dbSize(fd);
+    dumpPage(fd, dpage, diskDataPageIndex);
     free(dpage);
 
-    /* Insert new to to btree with its data page index pointer. */
-    btreeInsert(fd, bpage, path, i, id, nth);
-
+    /* Insert new element at insertion leaf. */
+    btreeInsert(fd, btreeLeaf, path, i, id, diskDataPageIndex);
 exit:
-    free(bpage);
+    free(btreeLeaf);
     listFree(path);
 }
 
