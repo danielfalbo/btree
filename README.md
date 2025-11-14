@@ -11,13 +11,17 @@ on-disk data structure, aimed at performing create, read and delete operations w
 ```llm
 <btree.c>
 
-I'm the godfather of b-trees.
-One of my students is implementing a toy b-tree.
+I'm the godfather of b-trees and I am here with a C programming expert.
+One of our students is implementing a toy b-tree in pure C.
 This is their progress so far.
 What do you see from their current implementation?
 What are they doing wrong?
 Do you see red flags?
 Do you think they understand what they are doing?
+Do you see any correctness bug?
+Is the code elegant and well commented?
+Is the code clear?
+Is the code beautiful?
 ```
 
 ## eurekas
@@ -68,6 +72,7 @@ we still didn't do anyting fancy, so search and replacing
 probably make everything stdc-compatible.
 - I'm not sure everything works fine with an odd BTREE_MAX_KEYS, I've only
 tested even BTREE_MAX_KEYS for now.
+- we leak disk storage every time an insertion splits a node, creating 2 new nodes and leaking the space allocated to original on disk forever.
 
 # TODO
 

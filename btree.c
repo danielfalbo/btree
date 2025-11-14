@@ -524,20 +524,16 @@ int main(void) {
 
     int fd = dbOpenOrCreate();
 
-    dbInsert(fd, 4, "_", "@");
-    dbInsert(fd, 6, "_", "@");
-    dbInsert(fd, 7, "_", "@");
-    dbInsert(fd, 8, "_", "@");
-    dbInsert(fd, 5, "_", "@");
-    dbInsert(fd, 9, "_", "@");
-    dbInsert(fd, 10, "_", "@");
-    dbInsert(fd, 11, "_", "@");
+    dbInsert(fd, 4,   "4name", "4@email.edu");
+    dbInsert(fd, 6,   "6name", "6@email.edu");
+    dbInsert(fd, 7,   "7name", "7@email.edu");
+    dbInsert(fd, 8,   "8name", "8@email.edu");
+    dbInsert(fd, 5,   "5name", "5@email.edu");
+    dbInsert(fd, 9,   "9name", "9@email.edu");
+    dbInsert(fd, 10, "10name", "10@email.edu");
+    dbInsert(fd, 11, "11name", "11@email.edu");
 
     diskWalk(fd);
-
-    // dbSearchById(fd, 10);
-
-    // dbDeleteById(fd, 103);
 
     close(fd);
     return 0;
