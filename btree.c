@@ -369,6 +369,10 @@ size_t dbSearchById(int fd, page *bpage, list *path, unsigned int id) {
     }
 }
 
+void btreeInsert(int fd, page *bpage, list *path,
+                 size_t i, unsigned int key, unsigned int value,
+                 unsigned int lchild, unsigned int rchild);
+
 /* Given btree node 'bpage' if the node is storing BTREE_MAX_KEYS or less,
  * just dumps it on disk. Else, if the node is storing BTREE_MAX_KEYS + 1
  * elements, creates a new child, moves the right half elements to the new
@@ -433,24 +437,11 @@ void btreePushToParentIfOverfullAndDump(int fd, page *bpage, list *path) {
         unsigned int btreeParentPageIdx = listLast(path);
         fetchPage(fd, bpage, btreeParentPageIdx);
         size_t i = btreePageSearchById(bpage, newKey);
-
-        /* Shift larger elements 1 position to the right. */
-        for (size_t j = bpage->len; j > i; j--) {
-            bpage->node.keys[j]       = bpage->node.keys[j-1];
-            bpage->node.values[j]     = bpage->node.values[j-1];
-            bpage->node.children[j+1] = bpage->node.children[j];
-        }
-        /* Set key and disk page pointer at insertion node,
-        * then increment the node's logical lenght. */
-        bpage->node.keys[i]       = newKey;
-        bpage->node.values[i]     = valuePageIndex;
-        bpage->node.children[i]   = lchildPageIndex;
-        bpage->node.children[i+1] = rchildPageIndex;
-        bpage->len++;
-
-        btreePushToParentIfOverfullAndDump(fd, bpage, path);
+        btreeInsert(fd, bpage, path, i, newKey, valuePageIndex,
+                    lchildPageIndex, rchildPageIndex);
     }
 }
+
 
 /* Inserts the given 'key' to the given btree leaf 'node',
  * recursively pushing mid elements to parents when reaching BTREE_MAX_KEYS.
@@ -459,7 +450,8 @@ void btreePushToParentIfOverfullAndDump(int fd, page *bpage, list *path) {
  * It is up to the caller to free the 'node' page and 'path' list from memory
  * afterwards if needed. */
 void btreeInsert(int fd, page *bpage, list *path,
-                 size_t i, unsigned int key, unsigned int value) {
+                 size_t i, unsigned int key, unsigned int value,
+                 unsigned int lchild, unsigned int rchild) {
     /* Shift larger elements 1 position to the right. */
     for (size_t j = bpage->len; j > i; j--) {
         bpage->node.keys[j]       = bpage->node.keys[j-1];
@@ -470,7 +462,8 @@ void btreeInsert(int fd, page *bpage, list *path,
      * then increment the node's logical lenght. */
     bpage->node.keys[i]       = key;
     bpage->node.values[i]     = value;
-    bpage->node.children[i+1] = NULL_CHILD;
+    bpage->node.children[i] = lchild;
+    bpage->node.children[i+1] = rchild;
     bpage->len++;
 
     btreePushToParentIfOverfullAndDump(fd, bpage, path);
@@ -495,7 +488,8 @@ void dbInsert(int fd, unsigned int id, char *name, char *email) {
     free(dpage);
 
     /* Insert new element at insertion leaf. */
-    btreeInsert(fd, btreeLeaf, path, i, id, diskDataPageIndex);
+    btreeInsert(fd, btreeLeaf, path, i, id, diskDataPageIndex,
+                NULL_CHILD, NULL_CHILD);
 
 exit:
     free(btreeLeaf);
