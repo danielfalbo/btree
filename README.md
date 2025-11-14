@@ -82,7 +82,13 @@ we still didn't do anyting fancy, so search and replacing
 probably make everything stdc-compatible.
 - I'm not sure everything works fine with an odd BTREE_MAX_KEYS, I've only
 tested even BTREE_MAX_KEYS for now.
-- we leak disk storage every time an insertion splits a node, creating 2 new nodes and leaking the space allocated to original on disk forever. instead of creating 2 new pages, we should just create 1 new page for the right child and overwrite the original page for the left child. while we do 1 extra disk I/O, the asymptotic is still logarithmic, so I'm happy with this for now.
+- we leak disk storage every time an insertion splits a node,
+creating 2 new nodes and leaking the space allocated to original on disk
+forever. instead of creating 2 new pages, we should just create 1 new page for
+the right child and overwrite the original page for the left child. while we
+do 1 extra disk I/O, the asymptotic is still logarithmic.
+- we could allocate more than just 1 more spot at each list insertion to have
+less frequent reallocation and copying of the existing list elements.
 
 # TODO
 
