@@ -527,6 +527,7 @@ int main(void) {
     dbInsert(fd, 9,   "9name", "9@email.edu");
     dbInsert(fd, 10, "10name", "10@email.edu");
     dbInsert(fd, 11, "11name", "11@email.edu");
+    dbInsert(fd, 0, "daniel", "hello@danielfalbo.com");
 
     diskWalk(fd);
 
