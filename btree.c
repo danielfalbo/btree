@@ -292,7 +292,6 @@ void printPage(int fd, int n) {
         break;
     }
     free(p);
-    fprintf(stdout, "\n");
 }
 
 /* Returns the size of database at file 'fd' as number of pages. */
@@ -495,6 +494,10 @@ int main(void) {
     dbInsert(fd, 7, "_", "@");
     dbInsert(fd, 8, "_", "@");
     dbInsert(fd, 5, "_", "@");
+    dbInsert(fd, 9, "_", "@");
+    dbInsert(fd, 10, "_", "@");
+
+    // dbInsert(fd, 11, "_", "@");
 
     diskWalk(fd);
 
