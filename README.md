@@ -8,6 +8,8 @@ on-disk data structure, aimed at performing create, read and delete operations w
 
 ## skeptical AI prompt for learning
 
+usually prompted to thinking model.
+
 ```llm
 <student README>
 </student README>
@@ -23,7 +25,8 @@ What do you see from their current implementation?
 What are they doing wrong?
 Do you see red flags?
 Do you think they understand what they are doing?
-Do you see any correctness bug?
+Do you see any correctness issue?
+Do you see any bug?
 Could the code be more elegant and better commented?
 Could the code be more clear?
 Can the code be refactored to be more beautiful?
