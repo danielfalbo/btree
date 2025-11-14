@@ -369,8 +369,8 @@ size_t dbSearchById(int fd, page *bpage, list *path, unsigned int id) {
     }
 }
 
-void btreeInsert(int fd, page *bpage, list *path,
-                 size_t i, unsigned int key, unsigned int value,
+void btreeInsert(int fd, page *bpage, list *path, size_t i,
+                 unsigned int key, unsigned int value,
                  unsigned int lchild, unsigned int rchild);
 
 /* Given btree node 'bpage' if the node is storing BTREE_MAX_KEYS or less,
@@ -437,7 +437,8 @@ void btreePushToParentIfOverfullAndDump(int fd, page *bpage, list *path) {
         unsigned int btreeParentPageIdx = listLast(path);
         fetchPage(fd, bpage, btreeParentPageIdx);
         size_t i = btreePageSearchById(bpage, newKey);
-        btreeInsert(fd, bpage, path, i, newKey, valuePageIndex,
+        btreeInsert(fd, bpage, path, i,
+                    newKey, valuePageIndex,
                     lchildPageIndex, rchildPageIndex);
     }
 }
@@ -488,7 +489,8 @@ void dbInsert(int fd, unsigned int id, char *name, char *email) {
     free(dpage);
 
     /* Insert new element at insertion leaf. */
-    btreeInsert(fd, btreeLeaf, path, i, id, diskDataPageIndex,
+    btreeInsert(fd, btreeLeaf, path, i,
+                id, diskDataPageIndex,
                 NULL_CHILD, NULL_CHILD);
 
 exit:
