@@ -382,7 +382,6 @@ void btreePushToParentIfOverfullAndDump(int fd, page *bpage, list *path) {
     bpage->node.children[1] = z;
     bpage->len = 1;
 
-
     btreePushToParentIfOverfullAndDump(fd, bpage, path);
 }
 
