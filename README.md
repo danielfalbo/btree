@@ -64,6 +64,7 @@ with the in-memory binary search.
 we still didn't do anyting fancy, so search and replacing
 `read(fd, p, sizeof(page));`s with `fread(p, 1, sizeof(page), f)`s would
 probably make everything stdc-compatible.
+- we should always keep the root in main memory.
 
 # TODO
 
