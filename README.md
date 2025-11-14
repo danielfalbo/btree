@@ -88,6 +88,6 @@ tested even BTREE_MAX_KEYS for now.
 
 - it would be cool to make the database file entirely human-readable.
 - `--feel-the-pain` flag that sleeps 5 extra seconds at every disk read/write.
-- implement `DELETE` operation
+- implement `DELETE` operation.
 - always keep the root in main memory.
 - build a repl.
