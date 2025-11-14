@@ -363,8 +363,8 @@ size_t dbSearchById(int fd, page *bpage, list *path, unsigned int id) {
  * at the given index 'i', splitting the node when reaching BTREE_MAX_KEYS.
  * Dumps to disk all updated node(s).
  *
- * It is up to the caller to free the 'node' page and 'path' list from memory
- * afterwards if needed. */
+ * It is up to the caller to free the 'bpage' object and 'path' list from
+ * memory afterwards if needed. */
 void btreeInsert(int fd, page *bpage, list *path,
                  size_t i, unsigned int key, unsigned int value,
                  unsigned int lchildPageIndex, unsigned int rchildPageIndex) {
@@ -380,6 +380,7 @@ void btreeInsert(int fd, page *bpage, list *path,
     bpage->len++;
 
     unsigned int btreeNodePageIdx = listPop(path);
+
 
     if (bpage->len <= BTREE_MAX_KEYS) {
         dumpPage(fd, bpage, btreeNodePageIdx);
