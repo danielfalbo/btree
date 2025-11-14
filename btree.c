@@ -483,6 +483,7 @@ void btreeInsert(int fd, page *bpage, list *path,
      * then increment the node's logical lenght. */
     bpage->node.keys[i] = key;
     bpage->node.values[i] = value;
+    bpage->node.children[i+1] = NULL_CHILD;
     bpage->len++;
 
     btreePushToParentIfOverfullAndDump(fd, bpage, path);
