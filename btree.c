@@ -506,17 +506,6 @@ exit:
     listFree(path);
 }
 
-// /* Remove element with given "id" from database at "fd". */
-// void dbDeleteById(int fd, unsigned int id) {
-//     page *p = createPage(PAGE_TYPE_DATA);
-//     fetchPage(fd, p, 0);
-//
-//     dataPageDeleteById(p, id);
-//     dumpPage(fd, p, 0);
-//
-//     free(p);
-// }
-
 /* ========================== Main ================================ */
 
 int main(void) {
