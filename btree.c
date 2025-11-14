@@ -449,7 +449,6 @@ void btreePushToParentIfOverfullAndDump(int fd, page *bpage, list *path) {
             bpage->node.keys[j]     = bpage->node.keys[j-1];
             bpage->node.values[j]   = bpage->node.values[j-1];
             bpage->node.children[j+1] = bpage->node.children[j];
-            bpage->node.children[j] = bpage->node.children[j-1];
         }
         /* Set key and disk page pointer at insertion node,
         * then increment the node's logical lenght. */
@@ -477,7 +476,6 @@ void btreeInsert(int fd, page *bpage, list *path,
         bpage->node.keys[j]     = bpage->node.keys[j-1];
         bpage->node.values[j]   = bpage->node.values[j-1];
         bpage->node.children[j+1] = bpage->node.children[j];
-        bpage->node.children[j] = bpage->node.children[j-1];
     }
     /* Set key and disk page pointer at insertion node,
      * then increment the node's logical lenght. */
