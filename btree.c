@@ -360,23 +360,13 @@ size_t dbSearchById(int fd, page *bpage, list *path, unsigned int id) {
         fetchPage(fd, bpage, listLast(path));
         i = btreePageSearchById(bpage, id);
 
-        if (i < bpage->len && bpage->node.keys[i] == id) {
-        //     fprintf(stdout, "Key %u already exists in database.\n", id);
-            goto exit;
-        }
+        if (i < bpage->len && bpage->node.keys[i] == id) return i;
 
         unsigned int nextBpageOffset = bpage->node.children[i];
-        if (nextBpageOffset == NULL_CHILD) {
-            /* === Insertion leaf found. === */
-            break;
-        } else {
-            /* === Explore children. === */
-            listPush(path, nextBpageOffset);
-        }
-    }
 
-exit:
-    return i;
+        if (nextBpageOffset == NULL_CHILD) return i;
+        else listPush(path, nextBpageOffset);
+    }
 }
 
 /* Given btree node 'bpage' if the node is storing BTREE_MAX_KEYS or less,
@@ -446,21 +436,20 @@ void btreePushToParentIfOverfullAndDump(int fd, page *bpage, list *path) {
 
         /* Shift larger elements 1 position to the right. */
         for (size_t j = bpage->len; j > i; j--) {
-            bpage->node.keys[j]     = bpage->node.keys[j-1];
-            bpage->node.values[j]   = bpage->node.values[j-1];
+            bpage->node.keys[j]       = bpage->node.keys[j-1];
+            bpage->node.values[j]     = bpage->node.values[j-1];
             bpage->node.children[j+1] = bpage->node.children[j];
         }
         /* Set key and disk page pointer at insertion node,
         * then increment the node's logical lenght. */
-        bpage->node.keys[i] = newKey;
-        bpage->node.values[i] = valuePageIndex;
-        bpage->node.children[i] = lchildPageIndex;
+        bpage->node.keys[i]       = newKey;
+        bpage->node.values[i]     = valuePageIndex;
+        bpage->node.children[i]   = lchildPageIndex;
         bpage->node.children[i+1] = rchildPageIndex;
         bpage->len++;
 
         btreePushToParentIfOverfullAndDump(fd, bpage, path);
     }
-
 }
 
 /* Inserts the given 'key' to the given btree leaf 'node',
@@ -473,14 +462,14 @@ void btreeInsert(int fd, page *bpage, list *path,
                  size_t i, unsigned int key, unsigned int value) {
     /* Shift larger elements 1 position to the right. */
     for (size_t j = bpage->len; j > i; j--) {
-        bpage->node.keys[j]     = bpage->node.keys[j-1];
-        bpage->node.values[j]   = bpage->node.values[j-1];
+        bpage->node.keys[j]       = bpage->node.keys[j-1];
+        bpage->node.values[j]     = bpage->node.values[j-1];
         bpage->node.children[j+1] = bpage->node.children[j];
     }
     /* Set key and disk page pointer at insertion node,
      * then increment the node's logical lenght. */
-    bpage->node.keys[i] = key;
-    bpage->node.values[i] = value;
+    bpage->node.keys[i]       = key;
+    bpage->node.values[i]     = value;
     bpage->node.children[i+1] = NULL_CHILD;
     bpage->len++;
 
@@ -491,6 +480,7 @@ void btreeInsert(int fd, page *bpage, list *path,
 void dbInsert(int fd, unsigned int id, char *name, char *email) {
     list *path = createList();
     page *btreeLeaf = createBtreePage();
+
     size_t i = dbSearchById(fd, btreeLeaf, path, id);
     if (i < btreeLeaf->len && btreeLeaf->node.keys[i] == id) {
         fprintf(stdout, "Key %u already exists in database.\n", id);
@@ -506,6 +496,7 @@ void dbInsert(int fd, unsigned int id, char *name, char *email) {
 
     /* Insert new element at insertion leaf. */
     btreeInsert(fd, btreeLeaf, path, i, id, diskDataPageIndex);
+
 exit:
     free(btreeLeaf);
     listFree(path);
