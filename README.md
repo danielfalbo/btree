@@ -11,11 +11,11 @@ on-disk data structure, aimed at performing create, read and delete operations w
 usually prompted to thinking model.
 
 ```llm
-<student README>
-</student README>
+<student's known limitations and TODOs>
+</student's known limitations and TODOs>
 
-<student btree.c>
-</student btree.c>
+<student's btree.c>
+</student's btree.c>
 
 I'm the godfather of b-trees and I am here with a C programming expert.
 One of our students is implementing a toy b-tree in pure C.
