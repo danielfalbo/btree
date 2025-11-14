@@ -17,7 +17,6 @@ usually prompted to thinking model.
 <student btree.c>
 </student btree.c>
 
-<professor request>
 I'm the godfather of b-trees and I am here with a C programming expert.
 One of our students is implementing a toy b-tree in pure C.
 This is their progress so far.
@@ -33,7 +32,6 @@ Can the code be refactored to be more beautiful?
 Can the code be refactored to be more simple?
 Can the code be refactored to have better abstractions,
 never repeating blocks of code?
-</professors request>
 ```
 
 ## eurekas
