@@ -330,6 +330,51 @@ int dbOpenOrCreate(void) {
     return fd;
 }
 
+/* Search insertion leaf for element with given 'id' in b-tree at 'fd'.
+ *
+ * Loads onto the provided 'bpage' object the node for btree insertion
+ * of element with key 'id'.
+ *
+ * Starts the search from the root of the btree, and appends to the provided
+ * 'path' list the explored nodes along the way, for later backtracking.
+ *
+ * Returns the insertion index of the given 'id' within the node loaded onto
+ * 'bpage'.
+ *
+ * If the key is already present in the database, it will be located at the
+ * returned index within the loaded node.
+ *
+ * It doesn't allocate memory for any other btree node other than the single
+ * one provided by the caller, therefore only holding 1 btree node in memory
+ * at any given time.
+ *
+ * It is up to the caller to free the 'bpage' node and 'path' list from memory
+ * afterwards if needed. */
+size_t dbSearchById(int fd, page *bpage, list *path, unsigned int id) {
+    size_t i;
+    listPush(path, BTREE_ROOT_PAGE_OFFSET);
+    while (1) {
+        fetchPage(fd, bpage, listLast(path));
+        i = btreePageSearchById(bpage, id);
+
+        if (i < bpage->len && bpage->node.keys[i] == id) {
+        //     fprintf(stdout, "Key %u already exists in database.\n", id);
+            goto exit;
+        }
+
+        unsigned int nextBpageOffset = bpage->node.children[i];
+        if (nextBpageOffset == NULL_CHILD_PAGE_OFFSET) {
+            /* === Insertion leaf found. === */
+            break;
+        } else {
+            /* === Explore children. === */
+            listPush(path, nextBpageOffset);
+        }
+    }
+exit:
+    return i;
+}
+
 /* Given btree node 'bpage' if the node is storing BTREE_MAX_KEYS or less,
  * just dumps it on memory. Else, if the node is storing BTREE_MAX_KEYS + 1
  * elements, creates a new child, moves the right half elements to the new
@@ -411,33 +456,11 @@ void btreeInsert(int fd, page *bpage, list *path,
 /* Insert new element onto database at 'fd'. */
 void dbInsert(int fd, unsigned int id, char *name, char *email) {
     list *path = createList();
-    listPush(path, BTREE_ROOT_PAGE_OFFSET);
-
     page *bpage = createBtreePage();
-    size_t i;
-
-    /* Search insertion leaf in b-tree.
-     *
-     * We only hold 1 btree node in memory at any given time,
-     * but we store the pages indices path from the root to the leaf
-     * for later backtracking if needed. */
-    while (1) {
-        fetchPage(fd, bpage, listLast(path));
-        i = btreePageSearchById(bpage, id);
-
-        if (i < bpage->len && bpage->node.keys[i] == id) {
-            fprintf(stdout, "Key %u already exists in database.\n", id);
-            goto exit;
-        }
-
-        unsigned int nextBpageOffset = bpage->node.children[i];
-        if (nextBpageOffset == NULL_CHILD_PAGE_OFFSET) {
-            /* === Insertion leaf found. === */
-            break;
-        } else {
-            /* === Explore children. === */
-            listPush(path, nextBpageOffset);
-        }
+    size_t i = dbSearchById(fd, bpage, path, id);
+    if (i < bpage->len && bpage->node.keys[i] == id) {
+        fprintf(stdout, "Key %u already exists in database.\n", id);
+        goto exit;
     }
 
     /* Dump entry to new data page on disk, store page index. */
@@ -454,21 +477,6 @@ exit:
     free(bpage);
     listFree(path);
 }
-
-/* Search element with given 'id' within database at 'fd'. */
-// void dbSearchById(int fd, unsigned int id) {
-//     page *p = createPage(PAGE_TYPE_BTREE);
-//     fetchPage(fd, p, 0);
-//     int j = btreePageSearchById(p, id);
-//     if (j == -1) {
-//         fprintf(stdout, "Key %u not found in database.", id);
-//         return;
-//     }
-//     unsigned int valuePage = p->node.values[j];
-//     free(p);
-//
-//     printPage(fd, valuePage);
-// }
 
 // /* Remove element with given "id" from database at "fd". */
 // void dbDeleteById(int fd, unsigned int id) {
@@ -494,7 +502,7 @@ int main(void) {
     dbInsert(fd, 8, "_", "@");
     dbInsert(fd, 5, "_", "@");
     dbInsert(fd, 9, "_", "@");
-    dbInsert(fd, 10, "_", "@");
+    // dbInsert(fd, 10, "_", "@");
 
     // dbInsert(fd, 11, "_", "@");
 
