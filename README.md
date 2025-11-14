@@ -32,6 +32,8 @@ Do you think they understand what they are doing?
 
 ## resources
 
+1. CLRS algorithms book B-trees section.
+
 - [antirez/otree](https://github.com/antirez/otree)
 - [cstack/db_tutorial](https://cstack.github.io/db_tutorial/)
 - [antoniosarosi/mkdb](https://youtube.com/playlist?list=PLdYoxziVZt9DWfdxTnXDYdc3F2TFT9jzV)
@@ -64,9 +66,9 @@ with the in-memory binary search.
 we still didn't do anyting fancy, so search and replacing
 `read(fd, p, sizeof(page));`s with `fread(p, 1, sizeof(page), f)`s would
 probably make everything stdc-compatible.
-- we should always keep the root in main memory.
 
 # TODO
 
 - it would be cool to make the database file entirely human-readable.
 - `--feel-the-pain` flag that sleeps 5 extra seconds at every disk read/write.
+- we should always keep the root in main memory.
