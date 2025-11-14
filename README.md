@@ -66,6 +66,8 @@ with the in-memory binary search.
 we still didn't do anyting fancy, so search and replacing
 `read(fd, p, sizeof(page));`s with `fread(p, 1, sizeof(page), f)`s would
 probably make everything stdc-compatible.
+- I'm not sure everything works fine with an odd BTREE_MAX_KEYS, I've only
+tested even BTREE_MAX_KEYS for now.
 
 # TODO
 
