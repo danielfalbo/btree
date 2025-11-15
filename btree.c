@@ -120,8 +120,8 @@ void *xmalloc(size_t size) {
     return ptr;
 }
 
-void *xrealloc(void *ptr, size_t size) {
-    ptr = realloc(ptr, size);
+void *xrealloc(void *oldptr, size_t size) {
+    void *ptr = realloc(oldptr, size);
     if (ptr == NULL) {
         dieWithHonor("Out of memory reallocating %zu bytes\n", size);
     }
